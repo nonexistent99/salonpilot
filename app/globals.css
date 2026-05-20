@@ -1,0 +1,492 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* ===================================
+   BEAUTY GROWTH OS — Design Tokens
+   Tema: Beauty/Feminino Premium
+   =================================== */
+
+:root {
+  /* Fundo principal: creme quente */
+  --background: oklch(0.97 0.008 60);
+  --foreground: oklch(0.18 0.02 40);
+
+  /* Cards brancos com bordas suaves */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.02 40);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.02 40);
+
+  /* Destaque principal: Rose Gold */
+  --primary: oklch(0.65 0.12 35);
+  --primary-foreground: oklch(0.99 0 0);
+
+  /* Secundário: creme */
+  --secondary: oklch(0.94 0.01 60);
+  --secondary-foreground: oklch(0.25 0.02 40);
+
+  /* Muted */
+  --muted: oklch(0.93 0.008 55);
+  --muted-foreground: oklch(0.52 0.02 40);
+
+  /* Accent: Rose Gold mais vivo */
+  --accent: oklch(0.68 0.15 30);
+  --accent-foreground: oklch(0.99 0 0);
+
+  /* Destrutivo: vermelho suave */
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  /* Bordas e inputs */
+  --border: oklch(0.88 0.01 55);
+  --input: oklch(0.95 0.006 60);
+  --ring: oklch(0.65 0.12 35);
+
+  /* Charts */
+  --chart-1: oklch(0.65 0.12 35);   /* rose gold */
+  --chart-2: oklch(0.72 0.12 340);  /* rosa suave */
+  --chart-3: oklch(0.60 0.15 145);  /* verde sucesso */
+  --chart-4: oklch(0.60 0.18 280);  /* roxo IA */
+  --chart-5: oklch(0.68 0.14 200);  /* azul suave */
+
+  --radius: 0.875rem;
+
+  /* Sidebar */
+  --sidebar: oklch(0.99 0.004 60);
+  --sidebar-foreground: oklch(0.18 0.02 40);
+  --sidebar-primary: oklch(0.65 0.12 35);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.95 0.008 55);
+  --sidebar-accent-foreground: oklch(0.18 0.02 40);
+  --sidebar-border: oklch(0.90 0.01 55);
+  --sidebar-ring: oklch(0.65 0.12 35);
+
+  /* Custom semantic */
+  --success: oklch(0.58 0.16 145);
+  --success-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.72 0.18 75);
+  --warning-foreground: oklch(0.18 0.02 40);
+  --info: oklch(0.60 0.18 280);
+  --info-foreground: oklch(0.99 0 0);
+
+  /* Beauty custom tokens */
+  --rose-gold: oklch(0.65 0.12 35);
+  --rose-soft: oklch(0.85 0.08 340);
+  --cream: oklch(0.97 0.008 60);
+  --ai-purple: oklch(0.60 0.18 280);
+  --beauty-green: oklch(0.58 0.16 145);
+}
+
+/* Dark mode (sidebar dark, body still light) */
+.dark {
+  --background: oklch(0.10 0.01 240);
+  --foreground: oklch(0.94 0 0);
+  --card: oklch(0.14 0.01 240);
+  --card-foreground: oklch(0.94 0 0);
+  --popover: oklch(0.14 0.01 240);
+  --popover-foreground: oklch(0.94 0 0);
+  --primary: oklch(0.72 0.12 35);
+  --primary-foreground: oklch(0.10 0.01 240);
+  --secondary: oklch(0.18 0.01 240);
+  --secondary-foreground: oklch(0.94 0 0);
+  --muted: oklch(0.20 0.01 240);
+  --muted-foreground: oklch(0.58 0.01 240);
+  --accent: oklch(0.72 0.12 35);
+  --accent-foreground: oklch(0.10 0.01 240);
+  --destructive: oklch(0.60 0.22 25);
+  --destructive-foreground: oklch(0.94 0 0);
+  --border: oklch(0.22 0.01 240);
+  --input: oklch(0.18 0.01 240);
+  --ring: oklch(0.72 0.12 35);
+  --sidebar: oklch(0.08 0.01 240);
+  --sidebar-foreground: oklch(0.94 0 0);
+  --sidebar-primary: oklch(0.72 0.12 35);
+  --sidebar-primary-foreground: oklch(0.10 0.01 240);
+  --sidebar-accent: oklch(0.16 0.01 240);
+  --sidebar-accent-foreground: oklch(0.94 0 0);
+  --sidebar-border: oklch(0.20 0.01 240);
+  --sidebar-ring: oklch(0.72 0.12 35);
+  --success: oklch(0.62 0.16 145);
+  --warning: oklch(0.72 0.18 75);
+  --info: oklch(0.65 0.18 280);
+}
+
+@theme inline {
+  --font-sans: 'DM Sans', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'DM Sans', 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'DM Sans', 'Inter', system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ===================================
+   UTILITY CLASSES
+   =================================== */
+
+/* Glassmorphism — versão beauty (light) */
+.glass {
+  background: oklch(1 0 0 / 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid oklch(0.88 0.01 55 / 0.6);
+  box-shadow: 0 2px 20px oklch(0 0 0 / 0.04);
+}
+
+.glass-card {
+  background: oklch(1 0 0 / 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid oklch(0.90 0.01 55 / 0.5);
+  box-shadow: 0 1px 8px oklch(0 0 0 / 0.04), 0 4px 24px oklch(0 0 0 / 0.03);
+}
+
+/* Background beauty gradient */
+.bg-beauty-gradient {
+  background:
+    radial-gradient(ellipse 70% 50% at 10% -10%, oklch(0.85 0.06 340 / 0.18), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 110%, oklch(0.65 0.12 35 / 0.08), transparent),
+    radial-gradient(ellipse 80% 60% at 50% 120%, oklch(0.72 0.12 340 / 0.06), transparent),
+    oklch(0.97 0.008 60);
+}
+
+/* Background for auth pages */
+.bg-auth-gradient {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, oklch(0.85 0.08 340 / 0.3), transparent),
+    radial-gradient(ellipse 70% 50% at 100% 100%, oklch(0.65 0.12 35 / 0.2), transparent),
+    radial-gradient(ellipse 50% 40% at 50% 50%, oklch(0.60 0.18 280 / 0.06), transparent),
+    oklch(0.97 0.008 60);
+}
+
+/* Sidebar gradient */
+.bg-sidebar-gradient {
+  background:
+    radial-gradient(ellipse 100% 40% at 50% 0%, oklch(0.65 0.12 35 / 0.05), transparent),
+    var(--sidebar);
+}
+
+/* Glow effects */
+.glow-primary {
+  box-shadow: 0 0 20px oklch(0.65 0.12 35 / 0.25), 0 0 60px oklch(0.65 0.12 35 / 0.08);
+}
+
+.glow-success {
+  box-shadow: 0 0 20px oklch(0.58 0.16 145 / 0.2), 0 0 60px oklch(0.58 0.16 145 / 0.06);
+}
+
+.glow-ai {
+  box-shadow: 0 0 20px oklch(0.60 0.18 280 / 0.2), 0 0 60px oklch(0.60 0.18 280 / 0.06);
+}
+
+/* Status dot pulse */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot-active {
+  background: var(--beauty-green);
+  box-shadow: 0 0 0 3px oklch(0.58 0.16 145 / 0.2);
+  animation: pulse-success 2s ease-in-out infinite;
+}
+
+.status-dot-warning {
+  background: var(--warning);
+  box-shadow: 0 0 0 3px oklch(0.72 0.18 75 / 0.2);
+  animation: pulse-warning 2s ease-in-out infinite;
+}
+
+.status-dot-inactive {
+  background: var(--muted-foreground);
+}
+
+/* ===================================
+   CARDS PREMIUM
+   =================================== */
+
+.metric-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: 0 1px 4px oklch(0 0 0 / 0.05);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.metric-card:hover {
+  box-shadow: 0 4px 20px oklch(0 0 0 / 0.08);
+  transform: translateY(-1px);
+}
+
+/* AI highlight card */
+.ai-card {
+  background: linear-gradient(135deg,
+    oklch(0.60 0.18 280 / 0.06) 0%,
+    oklch(0.65 0.12 35 / 0.04) 100%
+  );
+  border: 1px solid oklch(0.60 0.18 280 / 0.15);
+  border-radius: var(--radius-lg);
+}
+
+/* Urgent alert card */
+.urgent-card {
+  background: linear-gradient(135deg,
+    oklch(0.58 0.22 25 / 0.05) 0%,
+    oklch(0.65 0.12 35 / 0.04) 100%
+  );
+  border: 1px solid oklch(0.58 0.22 25 / 0.15);
+  border-radius: var(--radius-lg);
+}
+
+/* ===================================
+   BADGES BEAUTY
+   =================================== */
+
+.badge-vip {
+  background: linear-gradient(135deg, oklch(0.65 0.12 35), oklch(0.72 0.12 340));
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.badge-new {
+  background: oklch(0.58 0.16 145 / 0.12);
+  color: oklch(0.40 0.16 145);
+  border: 1px solid oklch(0.58 0.16 145 / 0.25);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.badge-inactive {
+  background: oklch(0.58 0.22 25 / 0.08);
+  color: oklch(0.45 0.22 25);
+  border: 1px solid oklch(0.58 0.22 25 / 0.2);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.badge-hot {
+  background: linear-gradient(135deg, oklch(0.72 0.18 35 / 0.12), oklch(0.72 0.16 75 / 0.08));
+  color: oklch(0.50 0.18 35);
+  border: 1px solid oklch(0.72 0.18 35 / 0.2);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+}
+
+/* ===================================
+   MISSION / GAMIFICATION
+   =================================== */
+
+.xp-bar {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--muted);
+  overflow: hidden;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, oklch(0.65 0.12 35), oklch(0.72 0.12 340));
+  transition: width 0.6s ease-out;
+}
+
+/* ===================================
+   ANIMATIONS
+   =================================== */
+
+@keyframes pulse-success {
+  0%, 100% { box-shadow: 0 0 0 2px oklch(0.58 0.16 145 / 0.15); }
+  50% { box-shadow: 0 0 0 5px oklch(0.58 0.16 145 / 0.05); }
+}
+
+@keyframes pulse-warning {
+  0%, 100% { box-shadow: 0 0 0 2px oklch(0.72 0.18 75 / 0.15); }
+  50% { box-shadow: 0 0 0 5px oklch(0.72 0.18 75 / 0.05); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(0.92 0.005 60) 25%,
+    oklch(0.97 0.005 60) 50%,
+    oklch(0.92 0.005 60) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes float-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-float-up {
+  animation: float-up 0.4s ease-out forwards;
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out forwards;
+}
+
+/* Staggered children animation */
+.stagger-children > * {
+  opacity: 0;
+  animation: float-up 0.4s ease-out forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+
+/* ===================================
+   DARK MODE OVERRIDES
+   =================================== */
+
+.dark .glass {
+  background: oklch(0.14 0.01 240 / 0.7);
+  border: 1px solid oklch(0.25 0.01 240 / 0.5);
+}
+
+.dark .glass-card {
+  background: oklch(0.16 0.01 240 / 0.8);
+  border: 1px solid oklch(0.25 0.01 240 / 0.4);
+  box-shadow: 0 1px 8px oklch(0 0 0 / 0.3);
+}
+
+.dark .bg-beauty-gradient {
+  background:
+    radial-gradient(ellipse 70% 50% at 10% -10%, oklch(0.60 0.18 280 / 0.1), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 110%, oklch(0.65 0.12 35 / 0.08), transparent),
+    oklch(0.10 0.01 240);
+}
+
+.dark .metric-card {
+  background: oklch(0.14 0.01 240);
+  border-color: oklch(0.22 0.01 240);
+}
+
+.dark .shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(0.16 0.01 240) 25%,
+    oklch(0.20 0.01 240) 50%,
+    oklch(0.16 0.01 240) 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* ===================================
+   SCROLLBAR
+   =================================== */
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(0.82 0.01 55);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.72 0.02 40);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(0.28 0.01 240);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.38 0.01 240);
+}
+
+/* ===================================
+   LAYOUT HELPERS
+   =================================== */
+
+/* Main content area with correct left padding for sidebar */
+.main-with-sidebar {
+  transition: margin-left 0.3s ease-out;
+}
