@@ -410,7 +410,10 @@ export async function generateAI(req: AIRequest): Promise<AIResponse> {
     console.error(`[AI] Primary provider ${provider} failed, falling back to ${fallback}:`, error);
 
     if (fallback === provider) {
-      // avoid infinite loop — go straight to mock
+      if (process.env.NODE_ENV === 'production') {
+        throw error;
+      }
+      // avoid infinite loop in development — go straight to mock
       return callMock(req);
     }
 
@@ -418,6 +421,9 @@ export async function generateAI(req: AIRequest): Promise<AIResponse> {
       return await dispatch(fallback, req);
     } catch (err2) {
       console.error(`[AI] Fallback provider ${fallback} also failed:`, err2);
+      if (process.env.NODE_ENV === 'production') {
+        throw err2;
+      }
       return callMock(req);
     }
   }

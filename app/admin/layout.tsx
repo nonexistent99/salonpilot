@@ -12,13 +12,18 @@ import {
   Search,
   CreditCard,
   ChevronLeft,
-  Zap,
   Shield,
+  Building2,
+  KeyRound,
+  MessageCircle,
 } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Visao Geral", icon: LayoutDashboard },
   { href: "/admin/users", label: "Usuarios", icon: Users },
+  { href: "/admin/salons", label: "Saloes", icon: Building2 },
+  { href: "/admin/settings", label: "Chaves e IA", icon: KeyRound },
+  { href: "/admin/whatsapp", label: "WhatsApp", icon: MessageCircle },
   { href: "/admin/credits", label: "Creditos", icon: Coins },
   { href: "/admin/ai-usage", label: "Uso de IA", icon: Brain },
   { href: "/admin/search-logs", label: "Buscas", icon: Search },

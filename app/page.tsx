@@ -9,6 +9,7 @@ import { DashboardSection } from "@/components/app/sections/dashboard";
 import { ClientsSection } from "@/components/app/sections/clients";
 import { CampaignsSection } from "@/components/app/sections/campaigns";
 import { CalendarSection } from "@/components/app/sections/calendar";
+import { InboxSection } from "@/components/app/sections/inbox";
 import { AICoachSection } from "@/components/app/sections/ai-coach";
 import { ContentSection } from "@/components/app/sections/content";
 import { ReportsSection } from "@/components/app/sections/reports";
@@ -22,6 +23,7 @@ export type Section =
   | "dashboard"
   | "clients"
   | "campaigns"
+  | "inbox"
   | "calendar"
   | "ai-coach"
   | "content"
@@ -84,6 +86,8 @@ export default function App() {
         return <ClientsSection />;
       case "campaigns":
         return <CampaignsSection />;
+      case "inbox":
+        return <InboxSection />;
       case "calendar":
         return <CalendarSection />;
       case "ai-coach":

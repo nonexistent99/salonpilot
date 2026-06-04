@@ -1,28 +1,18 @@
-import { createClient } from "@/lib/supabase/server";
+import { getUser, type AuthUser } from '@/lib/auth-server';
 
-/**
- * Validates the current user is an admin.
- * Returns the db client + user on success, or an error object.
- */
-export async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export async function requireAdmin(): Promise<
+  | { error: null; status: 200; user: AuthUser }
+  | { error: string; status: 401 | 403; user: null }
+> {
+  const user = await getUser();
 
   if (!user) {
-    return { error: "Unauthorized", status: 401 as const, supabase: null, user: null };
+    return { error: 'Unauthorized', status: 401, user: null };
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || profile.role !== "admin") {
-    return { error: "Forbidden", status: 403 as const, supabase: null, user: null };
+  if (!user.is_admin && user.role !== 'admin') {
+    return { error: 'Forbidden', status: 403, user: null };
   }
 
-  return { error: null, status: 200 as const, supabase, user };
+  return { error: null, status: 200, user };
 }

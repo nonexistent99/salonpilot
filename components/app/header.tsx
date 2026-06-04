@@ -5,7 +5,7 @@ import type { Section } from "@/app/page";
 import {
   Bell, Search, X, Check, CheckCheck, LogOut, User, Settings,
   ChevronDown, Scissors, Brain, Users, Megaphone, Calendar,
-  BarChart3, Trophy, Plug, Instagram
+  BarChart3, Trophy, Plug, Instagram, MessageCircle
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import useSWR, { mutate } from "swr";
@@ -23,12 +23,13 @@ const sectionTitles: Record<Section, { title: string; subtitle: string }> = {
   dashboard: { title: "Início", subtitle: "O que está acontecendo no seu salão hoje" },
   clients: { title: "Clientes", subtitle: "Gerencie sua carteira de clientes" },
   campaigns: { title: "Campanhas", subtitle: "Crie e acompanhe suas campanhas" },
+  inbox: { title: "Inbox WhatsApp", subtitle: "Atendimento, IA e handoff humano" },
   calendar: { title: "Agenda", subtitle: "Seus agendamentos e horários" },
   "ai-coach": { title: "Bella IA", subtitle: "Sua consultora de crescimento inteligente" },
   content: { title: "Conteúdo", subtitle: "Posts e Stories para o Instagram" },
   reports: { title: "Relatórios", subtitle: "Métricas e insights do seu salão" },
   missions: { title: "Missões", subtitle: "Ações diárias para crescer mais" },
-  integrations: { title: "Integrações", subtitle: "Conecte WhatsApp, Zaia e mais" },
+  integrations: { title: "Integrações", subtitle: "Conecte WhatsApp via Evolution API" },
   settings: { title: "Configurações", subtitle: "Dados do salão e preferências" },
   intelligence: { title: "Inteligência", subtitle: "Motor de crescimento com KPIs e IA estratégica" },
 };
@@ -234,12 +235,13 @@ function getSearchResults(query: string, onSectionChange?: (s: Section) => void)
     { keywords: ["dashboard", "inicio", "home", "hoje"], section: "dashboard", label: "Início", desc: "Resumo do dia no salão", icon: Scissors },
     { keywords: ["clientes", "crm", "carteira", "contato"], section: "clients", label: "Clientes", desc: "Gerencie sua carteira", icon: Users },
     { keywords: ["campanha", "campanhas", "mensagem", "disparar"], section: "campaigns", label: "Campanhas", desc: "Crie campanhas", icon: Megaphone },
+    { keywords: ["inbox", "whatsapp", "conversas", "mensagens"], section: "inbox", label: "Inbox WhatsApp", desc: "Atendimento e handoff", icon: MessageCircle },
     { keywords: ["agenda", "calendario", "horario", "agendamento"], section: "calendar", label: "Agenda", desc: "Seus agendamentos", icon: Calendar },
     { keywords: ["ia", "inteligencia", "coach", "bella", "dica", "conselho"], section: "ai-coach", label: "Bella IA", desc: "Sua consultora", icon: Brain },
     { keywords: ["conteudo", "instagram", "post", "story", "reels"], section: "content", label: "Conteúdo", desc: "Posts para Instagram", icon: Instagram },
     { keywords: ["relatorios", "metricas", "dados", "analytics", "crescimento"], section: "reports", label: "Relatórios", desc: "Métricas do salão", icon: BarChart3 },
     { keywords: ["missoes", "desafios", "conquistas", "xp", "pontos"], section: "missions", label: "Missões", desc: "Missões diárias", icon: Trophy },
-    { keywords: ["integracoes", "zaia", "whatsapp", "webhook", "api"], section: "integrations", label: "Integrações", desc: "Conectar sistemas", icon: Plug },
+    { keywords: ["integracoes", "evolution", "whatsapp", "webhook", "api"], section: "integrations", label: "Integrações", desc: "Conectar sistemas", icon: Plug },
     { keywords: ["config", "configuracao", "settings", "notificacao", "senha", "salao"], section: "settings", label: "Configurações", desc: "Ajuste suas preferências", icon: Settings },
   ];
 

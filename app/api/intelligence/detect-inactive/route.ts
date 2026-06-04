@@ -292,7 +292,7 @@ export async function POST(req: Request) {
       decision,
       provider: aiRes.provider,
       model: aiRes.model,
-      next: `POST /api/campaigns/${campaign.id}/dispatch para disparar via Zaia.`,
+      next: `POST /api/campaigns/${campaign.id}/dispatch para aprovar a campanha. Envio automatico em massa fica bloqueado no MVP.`,
     });
   } catch (err) {
     console.error('[detect-inactive]', err);

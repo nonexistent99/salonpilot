@@ -1,67 +1,49 @@
-import { requireAdmin } from "@/lib/admin-guard";
-import { NextResponse } from "next/server";
+import { requireAdmin } from '@/lib/admin-guard';
+import { sql, sqlOne } from '@/lib/db/neon';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return NextResponse.json({ error: guard.error }, { status: guard.status });
-  const supabase = guard.supabase!;
 
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-
-  const { data: logs } = await supabase
-    .from("ai_usage_log")
-    .select("*")
-    .gte("created_at", startOfMonth)
-    .order("created_at", { ascending: false });
-
-  const allLogs = logs || [];
-
-  // Total tokens + credits this month
-  const totalTokens = allLogs.reduce((s, l) => s + (l.tokens_used || 0), 0);
-  const totalCredits = allLogs.reduce((s, l) => s + (l.credits_consumed || 0), 0);
-
-  // AI usage per day (last 14 days)
-  const dailyUsage: { date: string; tokens: number; credits: number }[] = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const label = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-    const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
-    const dayLogs = allLogs.filter((l) => {
-      const cd = new Date(l.created_at);
-      return cd >= dayStart && cd < dayEnd;
-    });
-    dailyUsage.push({
-      date: label,
-      tokens: dayLogs.reduce((s, l) => s + (l.tokens_used || 0), 0),
-      credits: dayLogs.reduce((s, l) => s + (l.credits_consumed || 0), 0),
-    });
-  }
-
-  // Usage per feature
-  const byFeature: Record<string, { count: number; tokens: number; credits: number }> = {};
-  for (const log of allLogs) {
-    const feat = log.action || "unknown";
-    if (!byFeature[feat]) byFeature[feat] = { count: 0, tokens: 0, credits: 0 };
-    byFeature[feat].count++;
-    byFeature[feat].tokens += log.tokens_used || 0;
-    byFeature[feat].credits += log.credits_consumed || 0;
-  }
-
-  const featureBreakdown = Object.entries(byFeature).map(([feature, data]) => ({
-    feature,
-    ...data,
-  }));
-
-  // Recent logs
-  const recent = allLogs.slice(0, 50);
+  const [totals, dailyUsage, featureBreakdown, recent] = await Promise.all([
+    sqlOne<{ input: string; output: string; cost: string; calls: string }>(
+      `SELECT COALESCE(SUM(input_tokens), 0) as input,
+              COALESCE(SUM(output_tokens), 0) as output,
+              COALESCE(SUM(estimated_cost_usd), 0) as cost,
+              COUNT(*) as calls
+       FROM ai_runs
+       WHERE created_at >= date_trunc('month', NOW())`
+    ),
+    sql(
+      `SELECT date::text, total_input_tokens + total_output_tokens as tokens, total_cost_usd as cost
+       FROM ai_usage_daily
+       WHERE date >= CURRENT_DATE - INTERVAL '14 days'
+       ORDER BY date`
+    ),
+    sql(
+      `SELECT run_type as feature, COUNT(*) as count,
+              COALESCE(SUM(input_tokens + output_tokens), 0) as tokens,
+              COALESCE(SUM(estimated_cost_usd), 0) as cost
+       FROM ai_runs
+       WHERE created_at >= date_trunc('month', NOW())
+       GROUP BY run_type
+       ORDER BY count DESC`
+    ),
+    sql(
+      `SELECT ar.id, ar.salon_id, s.name as salon_name, ar.run_type, ar.model,
+              ar.input_tokens, ar.output_tokens, ar.estimated_cost_usd, ar.status, ar.error, ar.created_at
+       FROM ai_runs ar
+       LEFT JOIN salons s ON s.id = ar.salon_id
+       ORDER BY ar.created_at DESC
+       LIMIT 50`
+    ),
+  ]);
 
   return NextResponse.json({
-    totalTokens,
-    totalCredits,
-    totalCalls: allLogs.length,
+    totalTokens: Number(totals?.input || 0) + Number(totals?.output || 0),
+    totalCredits: Number(totals?.cost || 0),
+    totalCalls: Number(totals?.calls || 0),
     dailyUsage,
     featureBreakdown,
     recent,

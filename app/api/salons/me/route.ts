@@ -10,10 +10,12 @@ export async function GET() {
 
     const salon = await sqlOne(
       `SELECT s.*,
-        u.email, u.full_name as owner_name_user
+        u.email as user_email, COALESCE(u.full_name, u.name) as owner_name_user
        FROM salons s
-       LEFT JOIN users u ON u.id = s.owner_id
-       WHERE s.id = $1`,
+       LEFT JOIN users u ON u.salon_id = s.id AND u.role IN ('owner', 'admin')
+       WHERE s.id = $1
+       ORDER BY u.created_at ASC
+       LIMIT 1`,
       [auth.salonId]
     );
 

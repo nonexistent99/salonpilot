@@ -1,160 +1,177 @@
 "use client";
 
 import { useState } from "react";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { fetcher } from "@/lib/fetcher";
-import { Plug, CheckCircle2, XCircle, AlertCircle, ExternalLink, Webhook, Key } from "lucide-react";
+import { Plug, CheckCircle2, Loader2, Webhook, Key, MessageCircle, QrCode, RefreshCw, Unplug } from "lucide-react";
 
 export function IntegrationsSection() {
-  const { data: salonData } = useSWR("/api/salons/me", fetcher);
-  const [zaiaKey, setZaiaKey] = useState("");
-  const [zaiaAgentId, setZaiaAgentId] = useState("");
+  const { data } = useSWR("/api/whatsapp/accounts", fetcher, { refreshInterval: 30000 });
+  const accounts = data?.accounts || [];
+  const [form, setForm] = useState({ instance_name: "", phone_number: "", evolution_base_url: "", api_key: "" });
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+  const [qr, setQr] = useState<Record<string, unknown> | string | null>(null);
 
-  const handleSaveZaia = async () => {
-    if (!zaiaKey) return;
+  async function createAccount() {
+    if (!form.instance_name.trim()) return;
     setSaving(true);
-    try {
-      await fetch("/api/integrations/zaia/connect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ api_key: zaiaKey, agent_id: zaiaAgentId }),
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } finally {
-      setSaving(false);
-    }
-  };
+    await fetch("/api/whatsapp/accounts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    setForm({ instance_name: "", phone_number: "", evolution_base_url: "", api_key: "" });
+    await mutate("/api/whatsapp/accounts");
+    setSaving(false);
+  }
+
+  async function connect(id: string) {
+    setConnectingId(id);
+    const res = await fetch(`/api/whatsapp/accounts/${id}/connect`, { method: "POST" });
+    const data = await res.json();
+    setQr(data.qr_code || null);
+    await mutate("/api/whatsapp/accounts");
+    setConnectingId(null);
+  }
+
+  async function refreshStatus(id: string) {
+    await fetch(`/api/whatsapp/accounts/${id}/status`);
+    await mutate("/api/whatsapp/accounts");
+  }
+
+  async function disconnect(id: string) {
+    await fetch(`/api/whatsapp/accounts/${id}/disconnect`, { method: "POST" });
+    await mutate("/api/whatsapp/accounts");
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-foreground">Integrações</h1>
-        <p className="text-sm text-muted-foreground">Conecte seu salão ao WhatsApp, Instagram e mais</p>
+        <p className="text-sm text-muted-foreground">WhatsApp via Evolution API, sem transformar Evolution em CRM ou IA</p>
       </div>
 
-      {/* Zaia Integration */}
       <div className="glass-card rounded-xl p-6">
         <div className="flex items-start gap-4 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center">
-            <span className="text-2xl">🤖</span>
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+            <MessageCircle className="w-6 h-6 text-primary" />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="font-bold text-foreground">Zaia IA</h2>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Recomendado</span>
+              <h2 className="font-bold text-foreground">WhatsApp / Evolution API</h2>
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">Transporte</span>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Conecte o atendimento via WhatsApp e Instagram. A Zaia conversa com suas clientes e envia os dados para o BeautyGrowth.
+              A Evolution recebe e envia mensagens. O SalonPilot salva, interpreta com OpenAI e executa agenda/CRM no banco.
             </p>
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">API Key da Zaia</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nome da instância</label>
+            <input
+              value={form.instance_name}
+              onChange={(event) => setForm((current) => ({ ...current, instance_name: event.target.value }))}
+              placeholder="salao-principal"
+              className="w-full h-10 px-3 rounded-lg bg-muted/50 border border-border text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Número WhatsApp</label>
+            <input
+              value={form.phone_number}
+              onChange={(event) => setForm((current) => ({ ...current, phone_number: event.target.value }))}
+              placeholder="5511999999999"
+              className="w-full h-10 px-3 rounded-lg bg-muted/50 border border-border text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Evolution Base URL</label>
+            <input
+              value={form.evolution_base_url}
+              onChange={(event) => setForm((current) => ({ ...current, evolution_base_url: event.target.value }))}
+              placeholder="https://evolution.seudominio.com"
+              className="w-full h-10 px-3 rounded-lg bg-muted/50 border border-border text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">API Key da instância</label>
             <div className="relative">
               <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="password"
-                placeholder="zaia_key_..."
-                value={zaiaKey}
-                onChange={(e) => setZaiaKey(e.target.value)}
-                className="w-full h-10 pl-9 pr-3 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                value={form.api_key}
+                onChange={(event) => setForm((current) => ({ ...current, api_key: event.target.value }))}
+                placeholder="Opcional se usar chave global no admin"
+                className="w-full h-10 pl-9 pr-3 rounded-lg bg-muted/50 border border-border text-sm"
               />
             </div>
           </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">ID do Agente</label>
-            <input
-              type="text"
-              placeholder="agent_..."
-              value={zaiaAgentId}
-              onChange={(e) => setZaiaAgentId(e.target.value)}
-              className="w-full h-10 px-3 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-            />
-          </div>
+        </div>
 
-          <div className="bg-muted/50 rounded-xl p-4">
-            <div className="flex items-start gap-2">
-              <Webhook className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+        <button
+          onClick={createAccount}
+          disabled={saving || !form.instance_name.trim()}
+          className="mt-5 flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plug className="w-4 h-4" />}
+          Criar instância
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {accounts.map((account: any) => (
+          <div key={account.id} className="glass-card rounded-xl p-5 space-y-4">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-medium text-foreground">URL do Webhook para configurar na Zaia:</p>
-                <code className="text-xs text-primary mt-1 block break-all">
-                  {typeof window !== "undefined" ? `${window.location.origin}/api/integrations/zaia/webhook` : "https://seudominio.com/api/integrations/zaia/webhook"}
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4 text-primary" />
+                  {account.instance_name}
+                </h3>
+                <p className="text-xs text-muted-foreground">{account.phone_number || "sem número"} · {account.status}</p>
+              </div>
+              <span className="text-xs px-2 py-1 rounded-full bg-secondary text-muted-foreground">{account.provider}</span>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <Webhook className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                <code className="text-xs text-primary break-all">
+                  {account.webhook_url || `${typeof window !== "undefined" ? window.location.origin : "https://app.salonpilot.com"}/api/webhooks/evolution/${account.id}`}
                 </code>
               </div>
             </div>
-          </div>
 
-          <button
-            onClick={handleSaveZaia}
-            disabled={saving || !zaiaKey}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all"
-          >
-            {saved ? <><CheckCircle2 className="w-4 h-4" /> Salvo!</> : saving ? "Salvando..." : "Conectar Zaia"}
-          </button>
-        </div>
-      </div>
-
-      {/* Other integrations (coming soon) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {[
-          {
-            name: "WhatsApp Business",
-            desc: "Envie mensagens diretamente via API oficial",
-            icon: "💬",
-            status: "via_zaia",
-          },
-          {
-            name: "Google Calendar",
-            desc: "Sincronize sua agenda automaticamente",
-            icon: "📅",
-            status: "soon",
-          },
-          {
-            name: "Instagram",
-            desc: "Monitore mensagens e comentários",
-            icon: "📸",
-            status: "via_zaia",
-          },
-          {
-            name: "Meta Ads",
-            desc: "Integre leads dos anúncios diretamente no CRM",
-            icon: "📢",
-            status: "soon",
-          },
-        ].map(({ name, desc, icon, status }) => (
-          <div key={name} className="glass-card rounded-xl p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-2xl">{icon}</span>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-foreground">{name}</h3>
-                  {status === "soon" && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Em breve</span>
-                  )}
-                  {status === "via_zaia" && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">Via Zaia</span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
-              </div>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => connect(account.id)}
+                disabled={connectingId === account.id}
+                className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium flex items-center gap-2 disabled:opacity-50"
+              >
+                {connectingId === account.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <QrCode className="w-3.5 h-3.5" />}
+                Conectar QR
+              </button>
+              <button onClick={() => refreshStatus(account.id)} className="h-9 px-3 rounded-lg border border-border text-xs font-medium flex items-center gap-2 hover:bg-muted">
+                <RefreshCw className="w-3.5 h-3.5" />
+                Status
+              </button>
+              <button onClick={() => disconnect(account.id)} className="h-9 px-3 rounded-lg border border-border text-xs font-medium flex items-center gap-2 hover:bg-muted">
+                <Unplug className="w-3.5 h-3.5" />
+                Desconectar
+              </button>
             </div>
-            {status === "soon" ? (
-              <button disabled className="w-full h-8 rounded-lg bg-muted text-xs text-muted-foreground cursor-not-allowed">
-                Em breve
-              </button>
-            ) : (
-              <button className="w-full h-8 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors">
-                Configurar
-              </button>
-            )}
           </div>
         ))}
       </div>
+
+      {qr && (
+        <div className="glass-card rounded-xl p-5">
+          <h2 className="font-semibold text-foreground mb-3 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-primary" /> QR retornado pela Evolution</h2>
+          <pre className="text-xs whitespace-pre-wrap break-all bg-muted/60 rounded-lg p-3 max-h-72 overflow-auto">{typeof qr === "string" ? qr : JSON.stringify(qr, null, 2)}</pre>
+        </div>
+      )}
     </div>
   );
 }

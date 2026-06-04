@@ -1,9 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { Section } from "@/app/page";
 import { Bell, Search, Calendar } from "lucide-react";
 import { useState } from "react";
+
+type Section = "overview" | "pipeline" | "deals" | "team" | "reports";
 
 interface HeaderProps {
   activeSection: Section;

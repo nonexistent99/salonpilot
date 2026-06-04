@@ -1,10 +1,8 @@
 "use client";
 
 import React from "react";
-import LucideCircleDollarSignIcon from "lucide-react"; // Import the missing icon component
 
 import { cn } from "@/lib/utils";
-import type { Section } from "@/app/page";
 import {
   LayoutDashboard,
   GitBranch,
@@ -18,6 +16,16 @@ import {
   TrendingUp,
   Settings,
 } from "lucide-react";
+
+type Section =
+  | "overview"
+  | "pipeline"
+  | "deals"
+  | "customers"
+  | "team"
+  | "forecasting"
+  | "reports"
+  | "settings";
 
 interface SidebarProps {
   activeSection: Section;

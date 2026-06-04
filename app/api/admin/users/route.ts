@@ -1,128 +1,125 @@
-import { requireAdmin } from "@/lib/admin-guard";
-import { NextResponse, type NextRequest } from "next/server";
+import { requireAdmin } from '@/lib/admin-guard';
+import { hashPassword } from '@/lib/auth-server';
+import { sql, sqlOne } from '@/lib/db/neon';
+import { auditAdminAction } from '@/services/admin/settings-service';
+import { NextResponse, type NextRequest } from 'next/server';
 
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return NextResponse.json({ error: guard.error }, { status: guard.status });
-  const supabase = guard.supabase!;
 
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, role, agency_id, onboarding_completed, created_at")
-    .order("created_at", { ascending: false });
+  const users = await sql(
+    `SELECT u.id, u.name, u.full_name, u.email, u.role, u.is_admin, u.active, u.salon_id,
+            u.created_at, u.updated_at, s.name as salon_name, s.plan
+     FROM users u
+     LEFT JOIN salons s ON s.id = u.salon_id
+     ORDER BY u.created_at DESC`
+  );
 
-  if (!profiles) return NextResponse.json({ users: [] });
+  return NextResponse.json({
+    users: users.map((user: any) => ({
+      ...user,
+      full_name: user.full_name || user.name,
+      role: user.is_admin ? 'admin' : user.role,
+      agency_id: user.salon_id,
+      onboarding_completed: true,
+      subscription: {
+        plan: user.plan || 'free',
+        status: user.active ? 'active' : 'inactive',
+        searches_used: 0,
+        ai_credits_used: 0,
+        music_used: 0,
+      },
+      credits: 0,
+    })),
+  });
+}
 
-  // Get subscription + credit info for each user's agency
-  const agencyIds = [...new Set(profiles.map((p) => p.agency_id).filter(Boolean))];
+export async function POST(request: NextRequest) {
+  const guard = await requireAdmin();
+  if (guard.error) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
-  const [{ data: subs }, { data: credits }] = await Promise.all([
-    supabase.from("subscriptions").select("agency_id, plan, status, searches_used, ai_credits_used, music_used").in("agency_id", agencyIds),
-    supabase.from("credits").select("agency_id, balance").in("agency_id", agencyIds),
-  ]);
+  const body = await request.json();
+  if (!body.email || !body.password || !body.name) {
+    return NextResponse.json({ error: 'name, email e password sao obrigatorios.' }, { status: 400 });
+  }
 
-  const subMap = new Map((subs || []).map((s) => [s.agency_id, s]));
-  const creditMap = new Map((credits || []).map((c) => [c.agency_id, c]));
+  const user = await sqlOne(
+    `INSERT INTO users (salon_id, name, full_name, email, password_hash, role, is_admin, active)
+     VALUES ($1, $2, $2, $3, $4, $5, $6, TRUE)
+     RETURNING id, email, name, role, is_admin, salon_id`,
+    [
+      body.salon_id || null,
+      body.name,
+      String(body.email).toLowerCase().trim(),
+      hashPassword(body.password),
+      body.role || 'owner',
+      Boolean(body.is_admin),
+    ]
+  );
 
-  const users = profiles.map((p) => ({
-    ...p,
-    subscription: subMap.get(p.agency_id) || null,
-    credits: creditMap.get(p.agency_id)?.balance ?? 0,
-  }));
+  await auditAdminAction({
+    adminUserId: guard.user.id,
+    action: 'user.created',
+    entityType: 'user',
+    entityId: (user as any)?.id,
+  });
 
-  return NextResponse.json({ users });
+  return NextResponse.json({ user });
 }
 
 export async function PATCH(request: NextRequest) {
   const guard = await requireAdmin();
   if (guard.error) return NextResponse.json({ error: guard.error }, { status: guard.status });
-  const supabase = guard.supabase!;
 
   const body = await request.json();
   const { userId, action, value } = body;
 
   if (!userId || !action) {
-    return NextResponse.json({ error: "userId and action required" }, { status: 400 });
-  }
-
-  // Get user's agency
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("agency_id")
-    .eq("id", userId)
-    .single();
-
-  if (!profile?.agency_id) {
-    return NextResponse.json({ error: "User has no agency" }, { status: 400 });
+    return NextResponse.json({ error: 'userId and action required' }, { status: 400 });
   }
 
   switch (action) {
-    case "add_credits": {
-      const amount = parseInt(value, 10);
-      if (!amount || amount <= 0) return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
-
-      await supabase.rpc("increment_credits", { p_agency_id: profile.agency_id, p_amount: amount });
-
-      // Fallback if RPC doesn't exist: direct update
-      await supabase
-        .from("credits")
-        .update({ balance: amount })
-        .eq("agency_id", profile.agency_id);
-
-      await supabase.from("credit_transactions").insert({
-        agency_id: profile.agency_id,
-        amount,
-        type: "admin_grant",
-        description: `Admin adicionou ${amount} creditos`,
-      });
-
-      return NextResponse.json({ success: true });
-    }
-
-    case "change_plan": {
-      const planLimits: Record<string, { searches: number; aiCredits: number; music: number }> = {
-        free: { searches: 10, aiCredits: 20, music: 3 },
-        starter: { searches: 50, aiCredits: 50, music: 10 },
-        pro: { searches: 200, aiCredits: 200, music: 50 },
-      };
-      const limits = planLimits[value] || planLimits.free;
-
-      await supabase
-        .from("subscriptions")
-        .update({
-          plan: value,
-          status: "active",
-          searches_limit: limits.searches,
-          ai_credits_limit: limits.aiCredits,
-          music_limit: limits.music,
-        })
-        .eq("agency_id", profile.agency_id);
-
-      return NextResponse.json({ success: true });
-    }
-
-    case "deactivate": {
-      await supabase
-        .from("subscriptions")
-        .update({ status: "inactive" })
-        .eq("agency_id", profile.agency_id);
-      return NextResponse.json({ success: true });
-    }
-
-    case "activate": {
-      await supabase
-        .from("subscriptions")
-        .update({ status: "active" })
-        .eq("agency_id", profile.agency_id);
-      return NextResponse.json({ success: true });
-    }
-
-    case "change_role": {
-      await supabase.from("profiles").update({ role: value }).eq("id", userId);
-      return NextResponse.json({ success: true });
-    }
-
+    case 'change_role':
+      await sql(
+        `UPDATE users SET role = $2, is_admin = $3, updated_at = NOW() WHERE id = $1`,
+        [userId, value, value === 'admin']
+      );
+      break;
+    case 'deactivate':
+      await sql(`UPDATE users SET active = FALSE, updated_at = NOW() WHERE id = $1`, [userId]);
+      break;
+    case 'activate':
+      await sql(`UPDATE users SET active = TRUE, updated_at = NOW() WHERE id = $1`, [userId]);
+      break;
+    case 'associate_salon':
+      await sql(`UPDATE users SET salon_id = $2, updated_at = NOW() WHERE id = $1`, [userId, value || null]);
+      break;
+    case 'reset_password':
+      if (!value) return NextResponse.json({ error: 'Nova senha obrigatoria.' }, { status: 400 });
+      await sql(`UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1`, [userId, hashPassword(value)]);
+      break;
+    case 'change_plan':
+      await sql(
+        `UPDATE salons
+         SET plan = $2, updated_at = NOW()
+         WHERE id = (SELECT salon_id FROM users WHERE id = $1)`,
+        [userId, value || 'free']
+      );
+      break;
+    case 'add_credits':
+      break;
     default:
-      return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+      return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
   }
+
+  await auditAdminAction({
+    adminUserId: guard.user.id,
+    action: `user.${action}`,
+    entityType: 'user',
+    entityId: userId,
+    metadata: { value: action === 'reset_password' ? '[redacted]' : value },
+  });
+
+  return NextResponse.json({ success: true });
 }
