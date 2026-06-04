@@ -14,15 +14,15 @@ export default function DebugPage() {
       console.log("[v0] Testing Supabase connection...");
       
       // Test 1: Basic auth check
-      const { data, error } = await supabase.auth.getUser();
-      console.log("[v0] Auth check result:", { data, error });
+      const { data } = await supabase.auth.getUser();
+      console.log("[v0] Auth check result:", { data, error: null });
       
       setResult({
         timestamp: new Date().toISOString(),
         test: "auth.getUser()",
-        success: !error,
+        success: true,
         data,
-        error: error?.message,
+        error: null,
         url: process.env.NEXT_PUBLIC_SUPABASE_URL,
         anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 10) + "...",
       });

@@ -7,10 +7,9 @@ export const customerAssistantTools = [
       parameters: {
         type: 'object',
         properties: {
-          salon_id: { type: 'string' },
           query: { type: 'string' },
         },
-        required: ['salon_id'],
+        required: [],
         additionalProperties: false,
       },
     },
@@ -23,11 +22,10 @@ export const customerAssistantTools = [
       parameters: {
         type: 'object',
         properties: {
-          salon_id: { type: 'string' },
           service_id: { type: 'string' },
           service_name: { type: 'string' },
         },
-        required: ['salon_id'],
+        required: [],
         additionalProperties: false,
       },
     },
@@ -40,12 +38,11 @@ export const customerAssistantTools = [
       parameters: {
         type: 'object',
         properties: {
-          salon_id: { type: 'string' },
           service_id: { type: 'string' },
           date: { type: 'string', description: 'Data em YYYY-MM-DD' },
           professional_id: { type: 'string' },
         },
-        required: ['salon_id', 'service_id', 'date'],
+        required: ['service_id', 'date'],
         additionalProperties: false,
       },
     },
@@ -58,15 +55,12 @@ export const customerAssistantTools = [
       parameters: {
         type: 'object',
         properties: {
-          salon_id: { type: 'string' },
-          client_id: { type: 'string' },
           service_id: { type: 'string' },
           start_time: { type: 'string', description: 'ISO datetime do horario escolhido' },
           professional_id: { type: 'string' },
-          source_thread_id: { type: 'string' },
           notes: { type: 'string' },
         },
-        required: ['salon_id', 'client_id', 'service_id', 'start_time', 'source_thread_id'],
+        required: ['service_id', 'start_time'],
         additionalProperties: false,
       },
     },
@@ -79,13 +73,11 @@ export const customerAssistantTools = [
       parameters: {
         type: 'object',
         properties: {
-          salon_id: { type: 'string' },
-          thread_id: { type: 'string' },
           appointment_id: { type: 'string' },
           requested_date: { type: 'string' },
           reason: { type: 'string' },
         },
-        required: ['salon_id', 'thread_id'],
+        required: [],
         additionalProperties: false,
       },
     },
@@ -98,12 +90,10 @@ export const customerAssistantTools = [
       parameters: {
         type: 'object',
         properties: {
-          salon_id: { type: 'string' },
-          thread_id: { type: 'string' },
           appointment_id: { type: 'string' },
           reason: { type: 'string' },
         },
-        required: ['salon_id', 'thread_id'],
+        required: [],
         additionalProperties: false,
       },
     },
@@ -116,13 +106,11 @@ export const customerAssistantTools = [
       parameters: {
         type: 'object',
         properties: {
-          client_id: { type: 'string' },
-          thread_id: { type: 'string' },
           lead_stage: { type: 'string' },
           service_interest: { type: 'string' },
           notes: { type: 'string' },
         },
-        required: ['client_id', 'thread_id', 'lead_stage'],
+        required: ['lead_stage'],
         additionalProperties: false,
       },
     },
@@ -135,13 +123,11 @@ export const customerAssistantTools = [
       parameters: {
         type: 'object',
         properties: {
-          client_id: { type: 'string' },
           type: { type: 'string' },
           content: { type: 'string' },
           confidence: { type: 'number' },
-          source_thread_id: { type: 'string' },
         },
-        required: ['client_id', 'type', 'content'],
+        required: ['type', 'content'],
         additionalProperties: false,
       },
     },
@@ -154,12 +140,10 @@ export const customerAssistantTools = [
       parameters: {
         type: 'object',
         properties: {
-          salon_id: { type: 'string' },
-          thread_id: { type: 'string' },
           reason: { type: 'string' },
           urgency: { type: 'string', enum: ['low', 'normal', 'high'] },
         },
-        required: ['salon_id', 'thread_id', 'reason', 'urgency'],
+        required: ['reason', 'urgency'],
         additionalProperties: false,
       },
     },
@@ -172,13 +156,11 @@ export const customerAssistantTools = [
       parameters: {
         type: 'object',
         properties: {
-          client_id: { type: 'string' },
-          thread_id: { type: 'string' },
           due_at: { type: 'string' },
           reason: { type: 'string' },
           message_suggestion: { type: 'string' },
         },
-        required: ['client_id', 'thread_id', 'due_at', 'reason'],
+        required: ['due_at', 'reason'],
         additionalProperties: false,
       },
     },

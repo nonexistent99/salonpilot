@@ -43,6 +43,10 @@ function getScoreBadge(score: number) {
   };
 }
 
+function getLeadScore(lead: Lead) {
+  return Number(lead.opportunity_score ?? lead.score_ia ?? 0);
+}
+
 export function SearchSection({ onLeadSelect }: SearchSectionProps) {
   const [city, setCity] = useState("");
   const [niche, setNiche] = useState("");
@@ -149,7 +153,7 @@ export function SearchSection({ onLeadSelect }: SearchSectionProps) {
   // Sort
   filtered.sort((a, b) => {
     if (sortBy === "score")
-      return (b.opportunity_score ?? b.score_ia) - (a.opportunity_score ?? a.score_ia);
+      return getLeadScore(b) - getLeadScore(a);
     return b.rating - a.rating;
   });
 
@@ -333,7 +337,7 @@ export function SearchSection({ onLeadSelect }: SearchSectionProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <AnimatePresence>
           {filtered.map((lead, index) => {
-            const score = lead.opportunity_score ?? lead.score_ia;
+            const score = getLeadScore(lead);
             const badge = getScoreBadge(score);
             const reviewsNum = lead.reviews_count ?? lead.reviews ?? 0;
 

@@ -15,6 +15,8 @@ export async function GET() {
 export async function POST(request: Request) {
   const guard = await requireAdmin();
   if (guard.error) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const adminUser = guard.user;
+  if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json();
   const key = String(body.key || '').trim();
@@ -26,11 +28,11 @@ export async function POST(request: Request) {
     value: body.value,
     isSecret,
     description: body.description || null,
-    updatedBy: guard.user.id,
+    updatedBy: adminUser.id,
   });
 
   await auditAdminAction({
-    adminUserId: guard.user.id,
+    adminUserId: adminUser.id,
     action: 'setting.updated',
     entityType: 'platform_setting',
     entityId: key,

@@ -162,7 +162,7 @@ function CheckoutContent() {
                     style={{ color: `hsl(var(--${plan.color}))` }}
                   />
                 </div>
-                {plan.popular && (
+                {"popular" in plan && plan.popular && (
                   <span className="px-3 py-1 text-xs font-semibold rounded-full bg-primary text-primary-foreground">
                     Mais Popular
                   </span>

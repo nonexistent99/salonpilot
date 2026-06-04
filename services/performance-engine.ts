@@ -42,7 +42,10 @@ export async function calculateAgencyPerformance(
     .eq("status", "closed_won")
     .gte("created_at", startOfMonth);
 
-  const revenueCurrent = closedDeals?.reduce((sum, d) => sum + Number(d.value), 0) ?? 0;
+  const revenueCurrent = closedDeals?.reduce(
+    (sum: number, d: { value: unknown }) => sum + Number(d.value),
+    0
+  ) ?? 0;
 
   // 3. Current month meetings
   const { count: meetingsThisMonth } = await supabase
@@ -157,7 +160,7 @@ export async function generateAlerts(
     .is("deleted_at", null);
 
   if (allLeads && allLeads.length >= 10) {
-    const won = allLeads.filter((l) => l.status === "closed_won").length;
+    const won = allLeads.filter((l: { status: string }) => l.status === "closed_won").length;
     const total = allLeads.length;
     const actualConv = (won / total) * 100;
     if (actualConv < 5) {

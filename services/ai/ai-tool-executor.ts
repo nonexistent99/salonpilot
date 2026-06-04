@@ -14,12 +14,33 @@ type ExecuteToolArgs = {
   rawArguments: string;
 };
 
-function parseArguments(raw: string) {
+const INTERNAL_TOOL_ARG_KEYS = new Set([
+  'salon_id',
+  'salonId',
+  'client_id',
+  'clientId',
+  'customer_id',
+  'customerId',
+  'thread_id',
+  'threadId',
+  'source_thread_id',
+  'sourceThreadId',
+]);
+
+function parseArguments(raw: string): Record<string, any> {
   try {
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
   }
+}
+
+function sanitizeToolArguments(parsed: Record<string, any>) {
+  const sanitized = { ...parsed };
+  for (const key of INTERNAL_TOOL_ARG_KEYS) {
+    delete sanitized[key];
+  }
+  return sanitized;
 }
 
 function asUuid(value: unknown): string | null {
@@ -56,7 +77,7 @@ async function logToolCall(args: {
 
 export async function executeCustomerTool(args: ExecuteToolArgs) {
   const started = Date.now();
-  const parsed = parseArguments(args.rawArguments);
+  const parsed = sanitizeToolArguments(parseArguments(args.rawArguments));
   let result: unknown;
   let status = 'success';
 

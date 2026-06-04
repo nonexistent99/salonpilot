@@ -1,4 +1,4 @@
-import { Pool, Client } from 'pg';
+import { Pool, type PoolClient } from 'pg';
 
 let pool: Pool | null = null;
 
@@ -41,7 +41,7 @@ export async function queryOne(sql: string, values?: any[]) {
   return rows[0] || null;
 }
 
-export async function transaction(callback: (client: Client) => Promise<void>) {
+export async function transaction(callback: (client: PoolClient) => Promise<void>) {
   const db = await getDbConnection();
   const client = await db.connect();
 

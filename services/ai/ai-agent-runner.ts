@@ -17,6 +17,24 @@ function buildBatchText(messages: Array<{ content: string | null; message_type: 
   return `Cliente enviou em sequencia:\n${messages.map((m, index) => `${index + 1}) ${m.content || `[${m.message_type}]`}`).join('\n')}`;
 }
 
+function normalizeGuardText(text: string) {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function mentionsAppointmentConfirmation(text: string) {
+  const normalized = normalizeGuardText(text);
+  return [
+    /\b(agendamento|horario|servico|procedimento)\s+(confirmad[ao]|marcad[ao]|agendad[ao])\b/,
+    /\b(confirmad[ao]|marcad[ao]|agendad[ao])\s+(para|no|na|as)\b/,
+    /\b(ficou|esta|ta)\s+(confirmad[ao]|marcad[ao]|agendad[ao])\b/,
+    /\b(te|voce)\s+(agendei|marquei|reservei)\b/,
+    /\b(agendei|marquei|reservei)\b/,
+  ].some((pattern) => pattern.test(normalized));
+}
+
 export async function runCustomerAgent(args: {
   salonId: string;
   threadId: string;
@@ -129,6 +147,22 @@ export async function runCustomerAgent(args: {
         : 'Certo, vou te ajudar com isso. Pode me mandar mais um detalhe?';
     }
 
+    if (!appointmentCreated && mentionsAppointmentConfirmation(finalText)) {
+      await executeCustomerTool({
+        aiRunId: run.id,
+        salonId: args.salonId,
+        threadId: args.threadId,
+        customerId: context.customer.id,
+        toolName: 'transferToHuman',
+        rawArguments: JSON.stringify({
+          reason: 'A resposta da IA mencionou confirmacao de agenda sem createAppointment success=true.',
+          urgency: 'high',
+        }),
+      });
+      handoff = true;
+      finalText = 'Quero confirmar isso com seguranca antes de te passar como marcado. Vou pedir para uma atendente assumir por aqui e verificar a agenda direitinho.';
+    }
+
     const estimatedCost = estimateCostUsd({ model, inputTokens, outputTokens });
 
     await sql(
@@ -162,7 +196,7 @@ export async function runCustomerAgent(args: {
     await sql(
       `UPDATE conversation_threads
        SET previous_response_id = $3,
-           status = CASE WHEN status = 'completed' THEN status ELSE 'waiting_client' END,
+           status = CASE WHEN status IN ('completed', 'human_handoff') THEN status ELSE 'waiting_client' END,
            updated_at = NOW()
        WHERE salon_id = $1 AND id = $2`,
       [args.salonId, args.threadId, lastResponseId]

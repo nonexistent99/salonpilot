@@ -33,6 +33,25 @@ export type Section =
   | "settings"
   | "intelligence";
 
+export type Lead = {
+  id: string;
+  name: string;
+  niche?: string | null;
+  city?: string | null;
+  rating: number;
+  reviews?: number | null;
+  reviews_count?: number | null;
+  opportunity_score?: number | null;
+  score_ia?: number | null;
+  phone?: string | null;
+  address?: string | null;
+  website?: string | null;
+  has_website?: boolean | null;
+  status?: string | null;
+  script?: string | null;
+  [key: string]: unknown;
+};
+
 export default function App() {
   const [activeSection, setActiveSection] = useState<Section>("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);

@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS salons (
   plan TEXT DEFAULT 'free',
   plan_expires_at TIMESTAMPTZ,
   instagram TEXT,
+  timezone TEXT DEFAULT 'America/Sao_Paulo',
   logo_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -102,6 +103,36 @@ CREATE TABLE IF NOT EXISTS customer_tag_relations (
   PRIMARY KEY (customer_id, tag_id)
 );
 
+WITH duplicate_tags AS (
+  SELECT id, MIN(id) OVER (PARTITION BY salon_id, lower(name)) AS keep_id
+  FROM customer_tags
+),
+relations_to_keep AS (
+  INSERT INTO customer_tag_relations (customer_id, tag_id)
+  SELECT ctr.customer_id, duplicate_tags.keep_id
+  FROM customer_tag_relations ctr
+  JOIN duplicate_tags ON duplicate_tags.id = ctr.tag_id
+  WHERE duplicate_tags.id <> duplicate_tags.keep_id
+  ON CONFLICT DO NOTHING
+  RETURNING 1
+)
+DELETE FROM customer_tag_relations ctr
+USING duplicate_tags
+WHERE ctr.tag_id = duplicate_tags.id
+  AND duplicate_tags.id <> duplicate_tags.keep_id;
+
+WITH duplicate_tags AS (
+  SELECT id, MIN(id) OVER (PARTITION BY salon_id, lower(name)) AS keep_id
+  FROM customer_tags
+)
+DELETE FROM customer_tags tags
+USING duplicate_tags
+WHERE tags.id = duplicate_tags.id
+  AND duplicate_tags.id <> duplicate_tags.keep_id;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_customer_tags_salon_lower_name_unique
+  ON customer_tags(salon_id, lower(name));
+
 CREATE TABLE IF NOT EXISTS appointments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
@@ -164,6 +195,8 @@ ALTER TABLE customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NO
 UPDATE customers SET lifecycle_status = COALESCE(lifecycle_status, status, 'new');
 UPDATE customers SET lead_stage = COALESCE(lead_stage, status, 'new');
 UPDATE customers SET whatsapp_phone = phone WHERE whatsapp_phone IS NULL AND phone IS NOT NULL;
+
+ALTER TABLE salons ADD COLUMN IF NOT EXISTS timezone TEXT DEFAULT 'America/Sao_Paulo';
 
 CREATE INDEX IF NOT EXISTS idx_customers_whatsapp_phone ON customers(salon_id, whatsapp_phone);
 CREATE INDEX IF NOT EXISTS idx_customers_lifecycle ON customers(salon_id, lifecycle_status);

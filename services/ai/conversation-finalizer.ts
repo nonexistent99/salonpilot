@@ -4,15 +4,33 @@ import { saveClientMemory } from '@/services/crm/memory-service';
 import { createChatCompletion } from './openai-client';
 import { CONVERSATION_FINALIZER_SYSTEM } from './prompt-templates';
 
-function parseJson(text: string | null | undefined) {
+type FinalizerOutput = {
+  summary: string;
+  outcome: string;
+  lead_stage: string;
+  service_interests: string[];
+  appointment_id: string | null;
+  client_preferences: string[];
+  objections: string[];
+  sentiment: string;
+  recommended_tags: string[];
+  follow_up: {
+    needed: boolean;
+    reason: string | null;
+    suggested_message: string | null;
+    due_at: string | null;
+  };
+};
+
+function parseJson<T = unknown>(text: string | null | undefined): T | null {
   if (!text) return null;
   try {
-    return JSON.parse(text);
+    return JSON.parse(text) as T;
   } catch {
     const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
     if (!match) return null;
     try {
-      return JSON.parse(match[1]);
+      return JSON.parse(match[1]) as T;
     } catch {
       return null;
     }
@@ -57,7 +75,7 @@ export async function finalizeConversation(args: {
     ),
   ]);
 
-  const fallback = {
+  const fallback: FinalizerOutput = {
     summary: messages.map((m: any) => `${m.direction}: ${m.content}`).slice(-6).join(' | '),
     outcome: args.outcome || (thread.appointment_id ? 'appointment_created' : 'resolved_without_booking'),
     lead_stage: thread.lead_stage || 'new',
@@ -91,7 +109,7 @@ export async function finalizeConversation(args: {
       ],
     });
 
-    parsed = parseJson(response.message.content) || fallback;
+    parsed = parseJson<FinalizerOutput>(response.message.content) || fallback;
   } catch {
     parsed = fallback;
   }
@@ -134,7 +152,7 @@ export async function finalizeConversation(args: {
     const tagRow = await sqlOne<{ id: string }>(
       `INSERT INTO customer_tags (salon_id, name, color)
        VALUES ($1, $2, '#C78A6A')
-       ON CONFLICT DO NOTHING
+       ON CONFLICT (salon_id, lower(name)) DO UPDATE SET color = customer_tags.color
        RETURNING id`,
       [args.salonId, tag.trim()]
     );

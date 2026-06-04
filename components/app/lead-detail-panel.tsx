@@ -31,7 +31,7 @@ interface LeadDetailPanelProps {
 }
 
 export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
-  const [currentLead, setCurrentLead] = useState(lead);
+  const [currentLead, setCurrentLead] = useState<Lead>(lead);
   const [scheduling, setScheduling] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("09:00");
@@ -358,7 +358,7 @@ export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
                 </div>
                 <p className="text-xs text-muted-foreground">{analysis.best_contact_time as string}</p>
               </div>
-              {analysis.cold_call_script && (
+              {typeof analysis.cold_call_script === "string" && analysis.cold_call_script && (
                 <div className="p-3 rounded-lg bg-success/5 border border-success/10">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Phone className="w-3.5 h-3.5 text-success" />

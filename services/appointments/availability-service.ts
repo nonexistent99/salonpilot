@@ -25,6 +25,12 @@ type WorkingHourRow = {
   end_time: string;
 };
 
+type AvailableSlotsFailure = {
+  success: false;
+  code: 'SERVICE_NOT_FOUND' | 'WORKING_HOURS_NOT_CONFIGURED';
+  message: string;
+};
+
 function makeLocalDate(date: string, time: string): Date {
   return new Date(`${date}T${time.slice(0, 8)}-03:00`);
 }
@@ -49,7 +55,7 @@ export async function listAvailableSlots(args: {
   date: string;
   professionalId?: string | null;
   limit?: number;
-}): Promise<{ success: true; available_slots: AvailableSlot[] } | { success: false; message: string }> {
+}): Promise<{ success: true; available_slots: AvailableSlot[] } | AvailableSlotsFailure> {
   const service = await sqlOne<ServiceRow>(
     `SELECT id, name, duration_minutes
      FROM services
@@ -57,7 +63,7 @@ export async function listAvailableSlots(args: {
     [args.salonId, args.serviceId]
   );
 
-  if (!service) return { success: false, message: 'Servico nao encontrado.' };
+  if (!service) return { success: false, code: 'SERVICE_NOT_FOUND', message: 'Servico nao encontrado.' };
 
   const professionals = await sql<ProfessionalRow>(
     `SELECT DISTINCT p.id, p.name
@@ -89,6 +95,14 @@ export async function listAvailableSlots(args: {
     [args.salonId, weekday, professionals.map((p) => p.id)]
   );
 
+  if (workingHours.length === 0) {
+    return {
+      success: false,
+      code: 'WORKING_HOURS_NOT_CONFIGURED',
+      message: 'A agenda do salao ainda nao tem horario de funcionamento configurado para essa data.',
+    };
+  }
+
   const dayStart = makeLocalDate(args.date, '00:00:00').toISOString();
   const dayEnd = makeLocalDate(args.date, '23:59:59').toISOString();
 
@@ -119,9 +133,8 @@ export async function listAvailableSlots(args: {
     const specificHours = workingHours.filter((h) => h.professional_id === professional.id);
     const generalHours = workingHours.filter((h) => h.professional_id === null);
     const hours = specificHours.length > 0 ? specificHours : generalHours;
-    const dayHours = hours.length > 0 ? hours : [{ professional_id: null, start_time: '09:00:00', end_time: '18:00:00' }];
 
-    for (const hour of dayHours) {
+    for (const hour of hours) {
       let cursor = makeLocalDate(args.date, hour.start_time);
       const close = makeLocalDate(args.date, hour.end_time);
 

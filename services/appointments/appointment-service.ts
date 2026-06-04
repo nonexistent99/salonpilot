@@ -24,7 +24,7 @@ type CreateAppointmentSuccess = {
 
 type CreateAppointmentFailure = {
   success: false;
-  code: 'SLOT_UNAVAILABLE' | 'SERVICE_NOT_FOUND' | 'PROFESSIONAL_NOT_FOUND';
+  code: 'SLOT_UNAVAILABLE' | 'SERVICE_NOT_FOUND' | 'PROFESSIONAL_NOT_FOUND' | 'WORKING_HOURS_NOT_CONFIGURED';
   message: string;
   alternative_slots?: AvailableSlot[];
 };
@@ -43,7 +43,7 @@ export async function createAppointment(args: CreateAppointmentArgs): Promise<Cr
   });
 
   if (!alternatives.success) {
-    return { success: false, code: 'SERVICE_NOT_FOUND', message: alternatives.message };
+    return { success: false, code: alternatives.code, message: alternatives.message };
   }
 
   const requestedStart = new Date(args.startTime);
@@ -106,7 +106,7 @@ export async function createAppointment(args: CreateAppointmentArgs): Promise<Cr
       [args.salonId, professional.id, chosen.start_time, chosen.end_time, service.duration_minutes]
     );
 
-    if (conflict.rowCount > 0) {
+    if ((conflict.rowCount ?? 0) > 0) {
       return {
         success: false,
         code: 'SLOT_UNAVAILABLE',

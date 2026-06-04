@@ -3,10 +3,11 @@ import { requireSalon } from '@/lib/auth-server';
 import { sqlOne } from '@/lib/db/neon';
 
 export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
+  _req: Request,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await context.params;
     const auth = await requireSalon();
     if (!auth) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
 
@@ -15,7 +16,7 @@ export async function PATCH(
        SET status = 'completed', completed_at = NOW()
        WHERE id = $1 AND salon_id = $2
        RETURNING *`,
-      [params.id, auth.salonId]
+      [id, auth.salonId]
     );
 
     if (!mission) {

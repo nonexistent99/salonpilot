@@ -326,7 +326,7 @@ export function IntelligenceDashboard({ onSectionChange }: IntelligenceDashboard
                 </div>
               </div>
             )}
-            {decision.learning_goal && (
+            {typeof decision.learning_goal === "string" && decision.learning_goal && (
               <div className="md:col-span-2 lg:col-span-3">
                 <p className="text-xs font-semibold text-muted-foreground mb-1">OBJETIVO DE APRENDIZADO</p>
                 <p className="text-sm text-foreground italic">{String(decision.learning_goal)}</p>

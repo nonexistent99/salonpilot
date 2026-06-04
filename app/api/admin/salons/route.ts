@@ -28,6 +28,8 @@ export async function GET() {
 export async function POST(request: Request) {
   const guard = await requireAdmin();
   if (guard.error) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const adminUser = guard.user;
+  if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json();
   if (!body.name) return NextResponse.json({ error: 'name obrigatorio.' }, { status: 400 });
@@ -48,7 +50,7 @@ export async function POST(request: Request) {
   );
 
   await auditAdminAction({
-    adminUserId: guard.user.id,
+    adminUserId: adminUser.id,
     action: 'salon.created',
     entityType: 'salon',
     entityId: (salon as any)?.id,

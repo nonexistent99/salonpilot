@@ -27,7 +27,8 @@ class GrowthOSClient {
         }
         const data = await res.json();
         this._cachedUser = data.user || null;
-        return { data: { user: this._cachedUser } };
+        const user = this._cachedUser ?? null;
+        return { data: { user } };
       } catch {
         this._cachedUser = null;
         return { data: { user: null } };

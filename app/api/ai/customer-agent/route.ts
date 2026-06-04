@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireSalon } from '@/lib/auth-server';
-import { sql } from '@/lib/db/neon';
 import { runCustomerAgent } from '@/services/ai/ai-agent-runner';
+import { processDueMessageBatches } from '@/services/messaging/batch-processor';
 
 export async function POST(request: Request) {
   const auth = await requireSalon();
@@ -20,37 +20,6 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   }
 
-  const batches = await sql<{ id: string; thread_id: string }>(
-    `UPDATE message_batches
-     SET status = 'processing', updated_at = NOW()
-     WHERE id IN (
-       SELECT id
-       FROM message_batches
-       WHERE salon_id = $1 AND status = 'scheduled' AND scheduled_for <= NOW()
-       ORDER BY scheduled_for ASC
-       LIMIT 10
-     )
-     RETURNING id, thread_id`,
-    [auth.salonId]
-  );
-
-  const results = [];
-  for (const batch of batches) {
-    try {
-      const result = await runCustomerAgent({ salonId: auth.salonId, threadId: batch.thread_id });
-      await sql(
-        `UPDATE message_batches SET status = 'processed', processed_at = NOW(), updated_at = NOW() WHERE id = $1`,
-        [batch.id]
-      );
-      results.push({ batch_id: batch.id, result });
-    } catch (error) {
-      await sql(
-        `UPDATE message_batches SET status = 'failed', updated_at = NOW() WHERE id = $1`,
-        [batch.id]
-      );
-      results.push({ batch_id: batch.id, error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  }
-
-  return NextResponse.json({ processed: results.length, results });
+  const result = await processDueMessageBatches({ salonId: auth.salonId, limit: body.limit });
+  return NextResponse.json(result);
 }

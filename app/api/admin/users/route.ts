@@ -38,6 +38,8 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const guard = await requireAdmin();
   if (guard.error) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const adminUser = guard.user;
+  if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json();
   if (!body.email || !body.password || !body.name) {
@@ -59,7 +61,7 @@ export async function POST(request: NextRequest) {
   );
 
   await auditAdminAction({
-    adminUserId: guard.user.id,
+    adminUserId: adminUser.id,
     action: 'user.created',
     entityType: 'user',
     entityId: (user as any)?.id,
@@ -71,6 +73,8 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const guard = await requireAdmin();
   if (guard.error) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const adminUser = guard.user;
+  if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json();
   const { userId, action, value } = body;
@@ -114,7 +118,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   await auditAdminAction({
-    adminUserId: guard.user.id,
+    adminUserId: adminUser.id,
     action: `user.${action}`,
     entityType: 'user',
     entityId: userId,

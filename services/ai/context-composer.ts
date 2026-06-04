@@ -22,6 +22,7 @@ export type ThreadContext = {
     city: string | null;
     phone: string | null;
     instagram: string | null;
+    timezone: string | null;
   };
   customer: {
     id: string;
@@ -34,6 +35,34 @@ export type ThreadContext = {
   };
   contextText: string;
 };
+
+function getLocalDateParts(timeZone: string) {
+  const now = new Date();
+  const dateParts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now);
+  const part = (type: string) => dateParts.find((item) => item.type === type)?.value || '';
+  const today = `${part('year')}-${part('month')}-${part('day')}`;
+
+  return {
+    nowIso: now.toISOString(),
+    today,
+    localTime: new Intl.DateTimeFormat('pt-BR', {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(now),
+    weekday: new Intl.DateTimeFormat('pt-BR', {
+      timeZone,
+      weekday: 'long',
+    }).format(now),
+  };
+}
 
 export async function composeCustomerContext(args: { salonId: string; threadId: string }): Promise<ThreadContext> {
   const thread = await sqlOne<ThreadContext['thread']>(
@@ -48,7 +77,9 @@ export async function composeCustomerContext(args: { salonId: string; threadId: 
 
   const [salon, customer, services, recentMessages] = await Promise.all([
     sqlOne<ThreadContext['salon']>(
-      `SELECT id, name, city, phone, instagram FROM salons WHERE id = $1`,
+      `SELECT id, name, city, phone, instagram, COALESCE(timezone, 'America/Sao_Paulo') as timezone
+       FROM salons
+       WHERE id = $1`,
       [args.salonId]
     ),
     sqlOne<ThreadContext['customer']>(
@@ -77,6 +108,9 @@ export async function composeCustomerContext(args: { salonId: string; threadId: 
 
   if (!salon || !customer) throw new Error('Salon or customer not found');
 
+  const timeZone = salon.timezone || 'America/Sao_Paulo';
+  const localDate = getLocalDateParts(timeZone);
+
   const memories = await listClientMemories({
     salonId: args.salonId,
     customerId: customer.id,
@@ -89,6 +123,7 @@ export async function composeCustomerContext(args: { salonId: string; threadId: 
 
   const contextText = [
     `Salao: ${salon.name}${salon.city ? `, ${salon.city}` : ''}`,
+    `Data/hora atual: ${localDate.today} ${localDate.localTime} (${localDate.weekday}); timezone: ${timeZone}; now_iso: ${localDate.nowIso}`,
     `Cliente: ${customer.name} (${customer.whatsapp_phone || customer.phone || 'sem telefone'})`,
     `Lead stage: ${thread.lead_stage || customer.lead_stage || 'new'}`,
     `Status da conversa: ${thread.status}; IA ativa: ${thread.ai_enabled ? 'sim' : 'nao'}`,
