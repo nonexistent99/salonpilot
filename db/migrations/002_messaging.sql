@@ -61,6 +61,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_conversation_threads_account_remote_open
   ON conversation_threads(whatsapp_account_id, remote_jid)
   WHERE channel = 'whatsapp' AND status IN ('active', 'waiting_client', 'human_handoff');
 
+COMMENT ON COLUMN conversation_threads.previous_response_id IS
+  'Deprecated/reserved. Chat Completions response ids are not memory; use only after a Responses API migration that explicitly supports previous_response_id.';
+
 CREATE TABLE IF NOT EXISTS messages (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,

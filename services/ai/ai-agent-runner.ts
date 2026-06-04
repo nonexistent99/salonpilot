@@ -61,10 +61,10 @@ export async function runCustomerAgent(args: {
 
   const model = await resolveOpenAIModel('fast');
   const run = await sqlOne<{ id: string }>(
-    `INSERT INTO ai_runs (salon_id, thread_id, user_id, run_type, provider, model, status, previous_response_id)
-     VALUES ($1, $2, $3, 'customer_reply', 'openai', $4, 'started', $5)
+    `INSERT INTO ai_runs (salon_id, thread_id, user_id, run_type, provider, model, status)
+     VALUES ($1, $2, $3, 'customer_reply', 'openai', $4, 'started')
      RETURNING id`,
-    [args.salonId, args.threadId, args.userId || null, model, context.thread.previous_response_id]
+    [args.salonId, args.threadId, args.userId || null, model]
   );
 
   if (!run) throw new Error('Unable to create ai_run');
@@ -99,6 +99,7 @@ export async function runCustomerAgent(args: {
         maxTokens: 900,
       });
 
+      // Chat Completions ids are trace ids only; they are not conversation memory.
       lastResponseId = result.id;
       inputTokens += result.usage.prompt_tokens || 0;
       outputTokens += result.usage.completion_tokens || 0;
@@ -195,11 +196,10 @@ export async function runCustomerAgent(args: {
 
     await sql(
       `UPDATE conversation_threads
-       SET previous_response_id = $3,
-           status = CASE WHEN status IN ('completed', 'human_handoff') THEN status ELSE 'waiting_client' END,
+       SET status = CASE WHEN status IN ('completed', 'human_handoff') THEN status ELSE 'waiting_client' END,
            updated_at = NOW()
        WHERE salon_id = $1 AND id = $2`,
-      [args.salonId, args.threadId, lastResponseId]
+      [args.salonId, args.threadId]
     );
 
     if (unprocessed.length > 0) {

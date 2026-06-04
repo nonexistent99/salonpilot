@@ -28,6 +28,12 @@ CREATE INDEX IF NOT EXISTS idx_ai_runs_salon_created
 CREATE INDEX IF NOT EXISTS idx_ai_runs_thread
   ON ai_runs(thread_id, created_at DESC);
 
+COMMENT ON COLUMN ai_runs.previous_response_id IS
+  'Deprecated trace field. The Chat Completions runtime does not use this as memory.';
+
+COMMENT ON COLUMN ai_runs.response_id IS
+  'Provider response id for observability only under the Chat Completions runtime.';
+
 CREATE TABLE IF NOT EXISTS tool_calls (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   ai_run_id UUID REFERENCES ai_runs(id) ON DELETE SET NULL,

@@ -14,7 +14,6 @@ export type ThreadContext = {
     service_in_focus_id: string | null;
     appointment_id: string | null;
     summary: string | null;
-    previous_response_id: string | null;
   };
   salon: {
     id: string;
@@ -67,7 +66,7 @@ function getLocalDateParts(timeZone: string) {
 export async function composeCustomerContext(args: { salonId: string; threadId: string }): Promise<ThreadContext> {
   const thread = await sqlOne<ThreadContext['thread']>(
     `SELECT id, salon_id, customer_id, whatsapp_account_id, phone, ai_enabled, status,
-            lead_stage, service_in_focus_id, appointment_id, summary, previous_response_id
+            lead_stage, service_in_focus_id, appointment_id, summary
      FROM conversation_threads
      WHERE salon_id = $1 AND id = $2`,
     [args.salonId, args.threadId]
