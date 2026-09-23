@@ -3,16 +3,27 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Target, DollarSign, Percent, Users, MapPin, Briefcase,
-  ArrowRight, ArrowLeft, CheckCircle2, X, Loader2, Sparkles
+  Target,
+  DollarSign,
+  Percent,
+  Users,
+  MapPin,
+  Briefcase,
+  ArrowRight,
+  ArrowLeft,
+  CheckCircle2,
+  X,
+  Loader2,
+  Sparkles,
 } from "lucide-react";
-import { mutate } from "swr";
+import { useSWRConfig } from "swr";
 
 interface OnboardingOverlayProps {
   onComplete: () => void;
 }
 
 export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
+  const { mutate } = useSWRConfig();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
 
@@ -28,9 +39,11 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
   const ticketNum = Number(avgTicket) || 0;
   const convNum = Number(conversionRate) || 20;
   const salesNeeded = ticketNum > 0 ? Math.ceil(goalNum / ticketNum) : 0;
-  const meetingsNeeded = convNum > 0 ? Math.ceil(salesNeeded / (convNum / 100)) : 0;
+  const meetingsNeeded =
+    convNum > 0 ? Math.ceil(salesNeeded / (convNum / 100)) : 0;
   const schedulingRate = 10; // 10% default
-  const leadsNeeded = meetingsNeeded > 0 ? Math.ceil(meetingsNeeded / (schedulingRate / 100)) : 0;
+  const leadsNeeded =
+    meetingsNeeded > 0 ? Math.ceil(meetingsNeeded / (schedulingRate / 100)) : 0;
 
   const steps = [
     {
@@ -41,7 +54,9 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
       bg: "bg-primary/10",
       content: (
         <div className="flex flex-col gap-3">
-          <label className="text-xs font-medium text-muted-foreground">Meta mensal (R$)</label>
+          <label className="text-xs font-medium text-muted-foreground">
+            Meta mensal (R$)
+          </label>
           <div className="relative">
             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
@@ -55,7 +70,11 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
           </div>
           {goalNum > 0 && (
             <p className="text-xs text-muted-foreground mt-1">
-              Meta: <span className="text-foreground font-medium">R$ {goalNum.toLocaleString("pt-BR")}</span>/mês
+              Meta:{" "}
+              <span className="text-foreground font-medium">
+                R$ {goalNum.toLocaleString("pt-BR")}
+              </span>
+              /mês
             </p>
           )}
         </div>
@@ -70,7 +89,9 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
       bg: "bg-chart-2/10",
       content: (
         <div className="flex flex-col gap-3">
-          <label className="text-xs font-medium text-muted-foreground">Ticket médio (R$)</label>
+          <label className="text-xs font-medium text-muted-foreground">
+            Ticket médio (R$)
+          </label>
           <div className="relative">
             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
@@ -84,7 +105,11 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
           </div>
           {ticketNum > 0 && goalNum > 0 && (
             <p className="text-xs text-muted-foreground mt-1">
-              Você precisa fechar <span className="text-foreground font-medium">{salesNeeded} vendas</span> por mês
+              Você precisa fechar{" "}
+              <span className="text-foreground font-medium">
+                {salesNeeded} vendas
+              </span>{" "}
+              por mês
             </p>
           )}
         </div>
@@ -99,7 +124,9 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
       bg: "bg-warning/10",
       content: (
         <div className="flex flex-col gap-3">
-          <label className="text-xs font-medium text-muted-foreground">Taxa de conversão (%)</label>
+          <label className="text-xs font-medium text-muted-foreground">
+            Taxa de conversão (%)
+          </label>
           <div className="relative">
             <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
@@ -113,9 +140,19 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             {convNum > 0 ? (
-              <>Você precisa de <span className="text-foreground font-medium">{meetingsNeeded} reuniões</span> por mês</>
+              <>
+                Você precisa de{" "}
+                <span className="text-foreground font-medium">
+                  {meetingsNeeded} reuniões
+                </span>{" "}
+                por mês
+              </>
             ) : (
-              <>Não sabe? Usamos <span className="text-foreground font-medium">20%</span> como referência</>
+              <>
+                Não sabe? Usamos{" "}
+                <span className="text-foreground font-medium">20%</span> como
+                referência
+              </>
             )}
           </p>
         </div>
@@ -131,7 +168,9 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
       content: (
         <div className="flex flex-col gap-4">
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nicho principal</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+              Nicho principal
+            </label>
             <div className="relative">
               <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
@@ -145,7 +184,9 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Cidade/Região</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+              Cidade/Região
+            </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
@@ -175,16 +216,26 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
               <p className="text-xs text-muted-foreground mt-0.5">Vendas/mês</p>
             </div>
             <div className="p-3 rounded-xl bg-chart-2/5 border border-chart-2/10 text-center">
-              <p className="text-2xl font-bold text-chart-2">{meetingsNeeded}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Reuniões/mês</p>
+              <p className="text-2xl font-bold text-chart-2">
+                {meetingsNeeded}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Reuniões/mês
+              </p>
             </div>
             <div className="p-3 rounded-xl bg-warning/5 border border-warning/10 text-center">
               <p className="text-2xl font-bold text-warning">{leadsNeeded}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Leads necessários</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Leads necessários
+              </p>
             </div>
             <div className="p-3 rounded-xl bg-success/5 border border-success/10 text-center">
-              <p className="text-2xl font-bold text-success">R$ {goalNum.toLocaleString("pt-BR")}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Meta mensal</p>
+              <p className="text-2xl font-bold text-success">
+                R$ {goalNum.toLocaleString("pt-BR")}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Meta mensal
+              </p>
             </div>
           </div>
           <p className="text-xs text-muted-foreground text-center mt-2">
@@ -277,19 +328,23 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
           >
             {/* Header */}
             <div className="flex items-center gap-3 mb-2">
-              <div className={`w-10 h-10 rounded-xl ${currentStep.bg} flex items-center justify-center`}>
+              <div
+                className={`w-10 h-10 rounded-xl ${currentStep.bg} flex items-center justify-center`}
+              >
                 <Icon className={`w-5 h-5 ${currentStep.color}`} />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-foreground">{currentStep.title}</h2>
-                <p className="text-xs text-muted-foreground">{currentStep.subtitle}</p>
+                <h2 className="text-lg font-bold text-foreground">
+                  {currentStep.title}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {currentStep.subtitle}
+                </p>
               </div>
             </div>
 
             {/* Content */}
-            <div className="my-6">
-              {currentStep.content}
-            </div>
+            <div className="my-6">{currentStep.content}</div>
           </motion.div>
         </AnimatePresence>
 

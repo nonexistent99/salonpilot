@@ -1,5 +1,6 @@
 "use client";
 
+import { SWRConfig } from "swr";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -10,6 +11,7 @@ import { ClientsSection } from "@/components/app/sections/clients";
 import { CampaignsSection } from "@/components/app/sections/campaigns";
 import { CalendarSection } from "@/components/app/sections/calendar";
 import { InboxSection } from "@/components/app/sections/inbox";
+import { StrategySection } from "@/components/app/sections/strategy";
 import { AICoachSection } from "@/components/app/sections/ai-coach";
 import { ContentSection } from "@/components/app/sections/content";
 import { ReportsSection } from "@/components/app/sections/reports";
@@ -20,6 +22,7 @@ import { IntelligenceDashboard } from "@/components/app/sections/intelligence";
 import { Loader2, Scissors } from "lucide-react";
 
 export type Section =
+  | "strategy"
   | "dashboard"
   | "clients"
   | "campaigns"
@@ -56,30 +59,41 @@ export default function App() {
   const [activeSection, setActiveSection] = useState<Section>("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [ownerKey, setOwnerKey] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
   const router = useRouter();
+  const [authError, setAuthError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    let active = true;
+    setAuthError(false);
     const checkAuth = async () => {
       try {
         const res = await fetch("/api/auth/me", { credentials: "include" });
-        if (!res.ok) {
-          router.push("/auth/login");
+        if (!active) return;
+        if (res.status === 401) {
+          router.replace("/auth/login");
           return;
         }
+        if (!res.ok) throw new Error("Session temporarily unavailable");
         const { user } = await res.json();
         if (!user) {
-          router.push("/auth/login");
+          router.replace("/auth/login");
           return;
         }
+        setOwnerKey(`${user.salon_id}:${user.id}`);
         setAuthenticated(true);
         setLoading(false);
       } catch {
-        router.push("/auth/login");
+        if (active) setAuthError(true);
       }
     };
     checkAuth();
-  }, [router]);
+    return () => {
+      active = false;
+    };
+  }, [router, attempt]);
 
   if (loading || !authenticated) {
     return (
@@ -88,10 +102,25 @@ export default function App() {
           <div className="w-14 h-14 rounded-2xl bg-primary glow-primary flex items-center justify-center">
             <Scissors className="w-7 h-7 text-primary-foreground" />
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">Carregando...</span>
-          </div>
+          {authError ? (
+            <div role="alert" className="text-center">
+              <p>
+                Não foi possível verificar sua sessão. Seus dados foram
+                preservados.
+              </p>
+              <button
+                className="mt-3 border rounded-lg px-4 py-2"
+                onClick={() => setAttempt((n) => n + 1)}
+              >
+                Tentar novamente
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Carregando...</span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -99,6 +128,8 @@ export default function App() {
 
   const renderSection = () => {
     switch (activeSection) {
+      case "strategy":
+        return <StrategySection />;
       case "dashboard":
         return <DashboardSection onSectionChange={setActiveSection} />;
       case "clients":
@@ -129,33 +160,45 @@ export default function App() {
   };
 
   return (
-    <div className="flex min-h-screen bg-beauty-gradient">
-      <AppSidebar
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        collapsed={sidebarCollapsed}
-        onCollapsedChange={setSidebarCollapsed}
-      />
-      <div
-        className={`flex-1 flex flex-col transition-all duration-300 ease-out ${
-          sidebarCollapsed ? "ml-[72px]" : "ml-[264px]"
-        }`}
-      >
-        <AppHeader activeSection={activeSection} onSectionChange={setActiveSection} />
-        <main className="flex-1 p-6 overflow-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeSection}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
-              {renderSection()}
-            </motion.div>
-          </AnimatePresence>
-        </main>
+    <SWRConfig
+      key={ownerKey}
+      value={{
+        provider: () => new Map(),
+        revalidateOnFocus: false,
+        keepPreviousData: false,
+      }}
+    >
+      <div className="flex min-h-screen bg-beauty-gradient">
+        <AppSidebar
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+          collapsed={sidebarCollapsed}
+          onCollapsedChange={setSidebarCollapsed}
+        />
+        <div
+          className={`flex-1 flex flex-col transition-all duration-300 ease-out ${
+            sidebarCollapsed ? "ml-[72px]" : "ml-[264px]"
+          }`}
+        >
+          <AppHeader
+            activeSection={activeSection}
+            onSectionChange={setActiveSection}
+          />
+          <main className="flex-1 p-6 overflow-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeSection}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                {renderSection()}
+              </motion.div>
+            </AnimatePresence>
+          </main>
+        </div>
       </div>
-    </div>
+    </SWRConfig>
   );
 }

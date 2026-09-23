@@ -23,6 +23,7 @@ import {
   Star,
   Sparkles,
   Zap,
+  Target as TargetIcon,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -33,13 +34,34 @@ interface AppSidebarProps {
   onCollapsedChange: (collapsed: boolean) => void;
 }
 
-const navItems: { id: Section; label: string; icon: React.ElementType; group?: string }[] = [
-  { id: "dashboard", label: "Início", icon: LayoutDashboard, group: "principal" },
+const navItems: {
+  id: Section;
+  label: string;
+  icon: React.ElementType;
+  group?: string;
+}[] = [
+  {
+    id: "dashboard",
+    label: "Início",
+    icon: LayoutDashboard,
+    group: "principal",
+  },
   { id: "clients", label: "Clientes", icon: Users, group: "principal" },
   { id: "campaigns", label: "Campanhas", icon: Megaphone, group: "principal" },
-  { id: "inbox", label: "Inbox WhatsApp", icon: MessageCircle, group: "principal" },
+  {
+    id: "inbox",
+    label: "Caixa de entrada",
+    icon: MessageCircle,
+    group: "principal",
+  },
   { id: "calendar", label: "Agenda", icon: CalendarDays, group: "principal" },
   { id: "ai-coach", label: "Bella IA", icon: Brain, group: "ia" },
+  {
+    id: "strategy",
+    label: "Estratégia e Instagram",
+    icon: TargetIcon,
+    group: "ia",
+  },
   { id: "intelligence", label: "Growth Intelligence", icon: Zap, group: "ia" },
   { id: "content", label: "Conteúdo", icon: Instagram, group: "ia" },
   { id: "reports", label: "Relatórios", icon: BarChart3, group: "analise" },
@@ -66,24 +88,29 @@ export function AppSidebar({
 
   // Missions progress
   const missions = dashboard?.missions || [];
-  const completedMissions = missions.filter((m: { status: string }) => m.status === "completed").length;
+  const completedMissions = missions.filter(
+    (m: { status: string }) => m.status === "completed",
+  ).length;
   const totalMissions = missions.length || 5;
   const missionProgress = Math.round((completedMissions / totalMissions) * 100);
 
   // Group nav items
-  const groups = navItems.reduce((acc, item) => {
-    const g = item.group || "principal";
-    if (!acc[g]) acc[g] = [];
-    acc[g].push(item);
-    return acc;
-  }, {} as Record<string, typeof navItems>);
+  const groups = navItems.reduce(
+    (acc, item) => {
+      const g = item.group || "principal";
+      if (!acc[g]) acc[g] = [];
+      acc[g].push(item);
+      return acc;
+    },
+    {} as Record<string, typeof navItems>,
+  );
 
   return (
     <aside
       className={cn(
         "fixed left-0 top-0 z-40 h-screen border-r border-sidebar-border transition-all duration-300 ease-out flex flex-col",
         "bg-sidebar-gradient",
-        collapsed ? "w-[72px]" : "w-[264px]"
+        collapsed ? "w-[72px]" : "w-[264px]",
       )}
     >
       {/* Logo */}
@@ -95,7 +122,7 @@ export function AppSidebar({
           <div
             className={cn(
               "transition-all duration-300 overflow-hidden",
-              collapsed ? "opacity-0 w-0" : "opacity-100 w-auto"
+              collapsed ? "opacity-0 w-0" : "opacity-100 w-auto",
             )}
           >
             <p className="font-bold text-sm text-sidebar-foreground whitespace-nowrap leading-tight">
@@ -133,29 +160,35 @@ export function AppSidebar({
                         ? isAI
                           ? "bg-violet-500/10 text-violet-600 dark:text-violet-400"
                           : "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                        : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent",
                     )}
                     title={collapsed ? item.label : undefined}
                   >
                     {isActive && (
-                      <span className={cn(
-                        "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full",
-                        isAI ? "bg-violet-500" : "bg-primary"
-                      )} />
+                      <span
+                        className={cn(
+                          "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full",
+                          isAI ? "bg-violet-500" : "bg-primary",
+                        )}
+                      />
                     )}
                     <Icon
                       className={cn(
                         "w-4.5 h-4.5 shrink-0 transition-all duration-200",
                         isActive
-                          ? isAI ? "text-violet-600 dark:text-violet-400" : "text-primary"
+                          ? isAI
+                            ? "text-violet-600 dark:text-violet-400"
+                            : "text-primary"
                           : "group-hover:scale-110",
-                        isAI && !isActive && "text-violet-400"
+                        isAI && !isActive && "text-violet-400",
                       )}
                     />
                     <span
                       className={cn(
                         "whitespace-nowrap transition-all duration-300",
-                        collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
+                        collapsed
+                          ? "opacity-0 w-0 overflow-hidden"
+                          : "opacity-100",
                       )}
                     >
                       {item.label}
@@ -178,7 +211,7 @@ export function AppSidebar({
             href="/admin"
             className={cn(
               "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-              "text-amber-600 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20"
+              "text-amber-600 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20",
             )}
           >
             <Shield className="w-4.5 h-4.5 shrink-0" />
@@ -193,13 +226,18 @@ export function AppSidebar({
           <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
             <div className="flex items-center gap-2 mb-1.5">
               <Trophy className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-semibold text-primary">Missões do dia</span>
+              <span className="text-xs font-semibold text-primary">
+                Missões do dia
+              </span>
               <span className="ml-auto text-xs text-muted-foreground">
                 {completedMissions}/{totalMissions}
               </span>
             </div>
             <div className="xp-bar">
-              <div className="xp-bar-fill" style={{ width: `${missionProgress}%` }} />
+              <div
+                className="xp-bar-fill"
+                style={{ width: `${missionProgress}%` }}
+              />
             </div>
           </div>
         </div>
