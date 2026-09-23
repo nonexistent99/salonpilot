@@ -30,6 +30,7 @@ function CheckoutContent() {
         body: JSON.stringify({ planId: selected, name, phone: `55${phone.replace(/\D/g, '').replace(/^55/, '')}`, document }),
       });
       const data = await res.json();
+      if (res.status === 401) { router.push(`/auth/sign-up?plan=${selected}`); return; }
       if (!res.ok) throw new Error(data.error || 'Não foi possível continuar.');
       if (!data.url || !/^https:\/\/pay\.sunize\.com\.br\//.test(data.url)) throw new Error('Link de pagamento inválido.');
       window.location.assign(data.url);

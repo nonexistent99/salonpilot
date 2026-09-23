@@ -1,3 +1,4 @@
+import { getAssistantProfile } from '@/lib/assistant-profile';
 import { sql, sqlOne } from '@/lib/db/neon';
 import { estimateCostUsd } from './cost-estimator';
 import { createChatCompletion, resolveOpenAIModel } from './openai-client';
@@ -158,10 +159,11 @@ export async function generateInstagramContent(args: {
   if (!run) throw new Error('Unable to create ai_run');
 
   const started = Date.now();
-  const [salon, services, inactiveCount] = await Promise.all([
+  const [salon, services, inactiveCount, profile] = await Promise.all([
     sqlOne(`SELECT name, city, niche, instagram FROM salons WHERE id = $1`, [args.salonId]),
     sql(`SELECT name, price, duration_minutes FROM services WHERE salon_id = $1 AND active = TRUE LIMIT 12`, [args.salonId]),
     sqlOne(`SELECT COUNT(*) as count FROM customers WHERE salon_id = $1 AND status IN ('inactive', 'lost')`, [args.salonId]),
+    getAssistantProfile(args.salonId),
   ]);
 
   try {
@@ -181,6 +183,7 @@ export async function generateInstagramContent(args: {
             salon,
             services,
             inactive_customers: inactiveCount,
+            approved_brand_profile: profile ? { audience: profile.audience, differentiators: profile.differentiators, tone: profile.instagramVoice, policies: profile.policies } : null,
           }),
         },
       ],

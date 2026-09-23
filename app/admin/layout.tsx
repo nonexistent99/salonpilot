@@ -35,7 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
 
   return (
-    <AdminGuard>
+    pathname === "/admin/activate" ? <>{children}</> : <AdminGuard>
       <div className="flex min-h-screen bg-radial-gradient">
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 z-40 h-screen w-[260px] border-r border-sidebar-border bg-sidebar/80 backdrop-blur-xl flex flex-col">

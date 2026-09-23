@@ -72,6 +72,8 @@ export default function App() {
           router.push("/auth/login");
           return;
         }
+        const salonRes = await fetch("/api/salons/me", { credentials: "include" });
+        if (salonRes.ok) { const salon = await salonRes.json(); if (!salon.onboarding_completed) { router.push("/setup"); return; } }
         setAuthenticated(true);
         setLoading(false);
       } catch {

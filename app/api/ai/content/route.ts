@@ -1,3 +1,4 @@
+import { hasActiveSubscription } from '@/lib/subscription-access';
 import { NextResponse } from 'next/server';
 import { requireSalon } from '@/lib/auth-server';
 import { sql, sqlOne } from '@/lib/db/neon';
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
   const auth = await requireSalon();
   if (!auth) return NextResponse.json({ error: 'Nao autorizado.' }, { status: 401 });
 
+  if (!(await hasActiveSubscription(auth.salonId))) return NextResponse.json({ error: 'Assinatura ativa necessária.', checkout: '/checkout' }, { status: 402 });
   const body = await request.json();
   const result = await generateInstagramContent({
     salonId: auth.salonId,

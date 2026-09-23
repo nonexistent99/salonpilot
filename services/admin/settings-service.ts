@@ -84,16 +84,16 @@ export async function listPlatformSettings() {
 }
 
 export async function getOpenAIKey(): Promise<string | null> {
-  return process.env.OPENAI_API_KEY || await getPlatformSetting<string>('OPENAI_API_KEY');
+  return await getPlatformSetting<string>('OPENAI_API_KEY') || process.env.OPENAI_API_KEY || null;
 }
 
 export async function getEvolutionGlobalKey(): Promise<string | null> {
-  return process.env.EVOLUTION_GLOBAL_API_KEY || await getPlatformSetting<string>('EVOLUTION_GLOBAL_API_KEY');
+  return await getPlatformSetting<string>('EVOLUTION_GLOBAL_API_KEY') || process.env.EVOLUTION_GLOBAL_API_KEY || null;
 }
 
 export async function getEvolutionBaseUrl(): Promise<string | null> {
   const fromSetting = await getPlatformSetting<string>('EVOLUTION_BASE_URL');
-  return process.env.EVOLUTION_BASE_URL || fromSetting;
+  return fromSetting || process.env.EVOLUTION_BASE_URL || null;
 }
 
 export async function auditAdminAction(args: {

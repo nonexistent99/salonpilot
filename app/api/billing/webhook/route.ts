@@ -1,3 +1,4 @@
+import { getPlatformSetting } from '@/services/admin/settings-service';
 import { NextResponse } from 'next/server';
 import { timingSafeEqual } from 'node:crypto';
 import { sqlOne, transaction } from '@/lib/db/neon';
@@ -6,9 +7,10 @@ import { sunizeRequest } from '@/lib/sunize';
 export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
-  const secret = process.env.SUNIZE_API_SECRET;
+  const secret = await getPlatformSetting<string>('SUNIZE_API_SECRET') || process.env.SUNIZE_API_SECRET;
   const received = req.headers.get('x-api-secret') || '';
-  if (!secret || !received || !timingSafeEqual(Buffer.from(secret), Buffer.from(received))) {
+  if (!secret || !received || Buffer.byteLength(secret) !== Buffer.byteLength(received) ||
+      !timingSafeEqual(Buffer.from(secret), Buffer.from(received))) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
   }
   try {
@@ -20,7 +22,7 @@ export async function POST(req: Request) {
       'SELECT salon_id, external_id, plan, amount FROM billing_subscriptions WHERE provider_id = $1', [event.id]);
     if (!row) return NextResponse.json({ ignored: true });
     // The API is authoritative even if webhook deliveries arrive out of order.
-    const remote = await sunizeRequest<{ external_id: string; status: string; amount: number; next_payment_date?: string | null }>(
+    const remote = await sunizeRequest<{ external_id: string; status: string; amount: number; next_payment_date?: string | null; last_payment_date?: string | null }>(
       `/subscriptions/${encodeURIComponent(event.id)}`);
     if (remote.external_id !== row.external_id || Number(remote.amount) !== Number(row.amount) ||
         !['ACTIVE', 'PENDING_AUTHORIZATION', 'LATE', 'PAUSED', 'CANCELED'].includes(remote.status)) {
@@ -29,6 +31,10 @@ export async function POST(req: Request) {
     await transaction(async client => {
       await client.query(`UPDATE billing_subscriptions SET status = $2, next_payment_date = $3, updated_at = NOW()
         WHERE provider_id = $1`, [event.id, remote.status, remote.next_payment_date || null]);
+      if (remote.status === 'ACTIVE' && remote.last_payment_date && !Number.isNaN(Date.parse(remote.last_payment_date))) {
+        await client.query(`INSERT INTO billing_payments (provider_id, salon_id, amount, payment_date) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING`,
+          [event.id, row.salon_id, row.amount, remote.last_payment_date]);
+      }
       const active = await client.query(`SELECT plan, next_payment_date FROM billing_subscriptions
         WHERE salon_id = $1 AND status = 'ACTIVE' ORDER BY updated_at DESC LIMIT 1`, [row.salon_id]);
       await client.query(`UPDATE salons SET plan = $2, plan_expires_at = $3 WHERE id = $1`,
