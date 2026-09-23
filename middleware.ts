@@ -1,7 +1,12 @@
 import { updateSession } from '@/lib/supabase/middleware'
-import { type NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname === '/' &&
+      !request.cookies.get('salonpilot_session') &&
+      !request.cookies.get('growthOS_session')) {
+    return NextResponse.redirect(new URL('/auth/login', request.url))
+  }
   return await updateSession(request)
 }
 
