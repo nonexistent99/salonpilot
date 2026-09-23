@@ -1,3 +1,4 @@
+import { hasActiveSubscription } from '@/lib/subscription-access';
 import { sql, sqlOne } from '@/lib/db/neon';
 import { markMessagesProcessed, getUnprocessedInboundMessages } from '@/services/messaging/message-buffer';
 import { sendWhatsAppText } from '@/services/messaging/outbound-service';
@@ -42,7 +43,10 @@ export async function runCustomerAgent(args: {
   batchText?: string | null;
   sendOutbound?: boolean;
 }) {
+  if (!(await hasActiveSubscription(args.salonId))) return { skipped: true, reason: 'Subscription not active' };
   const context = await composeCustomerContext({ salonId: args.salonId, threadId: args.threadId });
+
+  if (!context.ready) return { skipped: true, reason: 'Assistant needs approved salon setup, services and hours' };
 
   if (!context.thread.ai_enabled || context.thread.status === 'human_handoff') {
     return { skipped: true, reason: 'AI disabled for thread' };

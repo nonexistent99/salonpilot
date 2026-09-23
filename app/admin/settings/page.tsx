@@ -7,6 +7,8 @@ import { fetcher } from "@/lib/fetcher";
 import { KeyRound, Save, Loader2, ShieldCheck } from "lucide-react";
 
 const DEFAULT_SETTINGS = [
+  { key: "SUNIZE_API_KEY", label: "Sunize v2 API Key", secret: true, description: "Chave de cobrança; use uma credencial v2" },
+  { key: "SUNIZE_API_SECRET", label: "Sunize v2 API Secret", secret: true, description: "Segredo do webhook e das cobranças" },
   { key: "OPENAI_API_KEY", label: "OpenAI API Key", secret: true, description: "Chave principal da IA" },
   { key: "OPENAI_MODEL_FAST", label: "Modelo rapido", secret: false, description: "Ex: gpt-4o-mini" },
   { key: "OPENAI_MODEL_STRATEGIC", label: "Modelo estrategico", secret: false, description: "Ex: gpt-4o" },
@@ -26,7 +28,7 @@ export default function AdminSettingsPage() {
     const value = values[item.key];
     if (!value) return;
     setSaving(item.key);
-    await fetch("/api/admin/settings", {
+    const response = await fetch("/api/admin/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -36,6 +38,7 @@ export default function AdminSettingsPage() {
         description: item.description,
       }),
     });
+    if (!response.ok) { setSaving(null); alert("Não foi possível salvar a configuração."); return; }
     setValues((current) => ({ ...current, [item.key]: "" }));
     await mutate("/api/admin/settings");
     setSaving(null);

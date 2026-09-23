@@ -33,13 +33,13 @@ export type OpenAIChatResult = {
 
 export async function resolveOpenAIModel(tier: 'fast' | 'strategic' = 'fast') {
   if (tier === 'strategic') {
-    return process.env.OPENAI_MODEL_STRATEGIC
-      || await getPlatformSetting<string>('OPENAI_MODEL_STRATEGIC')
+    return await getPlatformSetting<string>('OPENAI_MODEL_STRATEGIC')
+      || process.env.OPENAI_MODEL_STRATEGIC
       || 'gpt-4o';
   }
 
-  return process.env.OPENAI_MODEL_FAST
-    || await getPlatformSetting<string>('OPENAI_MODEL_FAST')
+  return await getPlatformSetting<string>('OPENAI_MODEL_FAST')
+    || process.env.OPENAI_MODEL_FAST
     || 'gpt-4o-mini';
 }
 

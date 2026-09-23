@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Scissors, Eye, EyeOff, Loader2, Sparkles } from "lucide-react";
+import { Scissors, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -125,29 +125,12 @@ export default function LoginPage() {
           <div className="mt-4 pt-4 border-t border-border text-center">
             <p className="text-sm text-muted-foreground">
               Não tem conta?{" "}
-              <Link href="/auth/register" className="text-primary font-semibold hover:underline">
+              <Link href="/auth/sign-up" className="text-primary font-semibold hover:underline">
                 Criar gratuitamente
               </Link>
             </p>
           </div>
 
-          {/* Demo credentials */}
-          <div className="mt-4 p-3 rounded-xl bg-muted/50 border border-border">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              <p className="text-xs font-semibold text-foreground">Demo — acesso rápido</p>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              E-mail: <code className="text-primary">admin@bellarosa.com</code> | Senha: <code className="text-primary">Admin123!</code>
-            </p>
-            <button
-              type="button"
-              onClick={() => setForm({ email: "admin@bellarosa.com", password: "Admin123!" })}
-              className="mt-1.5 text-xs text-primary font-medium hover:underline"
-            >
-              Preencher automaticamente →
-            </button>
-          </div>
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-4">

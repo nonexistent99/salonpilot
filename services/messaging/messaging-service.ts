@@ -12,6 +12,7 @@ export type WhatsAppAccount = {
   instance_name: string;
   instance_token_encrypted: string | null;
   api_key_encrypted: string | null;
+  webhook_token_encrypted: string | null;
   phone_number: string | null;
   status: string;
 };

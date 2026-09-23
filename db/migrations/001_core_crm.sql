@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS customer_tag_relations (
 );
 
 WITH duplicate_tags AS (
-  SELECT id, MIN(id) OVER (PARTITION BY salon_id, lower(name)) AS keep_id
+  SELECT id, (MIN(id::text) OVER (PARTITION BY salon_id, lower(name)))::uuid AS keep_id
   FROM customer_tags
 ),
 relations_to_keep AS (
@@ -122,7 +122,7 @@ WHERE ctr.tag_id = duplicate_tags.id
   AND duplicate_tags.id <> duplicate_tags.keep_id;
 
 WITH duplicate_tags AS (
-  SELECT id, MIN(id) OVER (PARTITION BY salon_id, lower(name)) AS keep_id
+  SELECT id, (MIN(id::text) OVER (PARTITION BY salon_id, lower(name)))::uuid AS keep_id
   FROM customer_tags
 )
 DELETE FROM customer_tags tags

@@ -6,7 +6,9 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
-    "start": "next start"
+    "start": "next start",
+    "db:migrate": "node scripts/migrate.mjs",
+    "admin:bootstrap": "node scripts/create-initial-admin.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -61,7 +63,6 @@
     "recharts": "2.15.4",
     "server-only": "^0.0.1",
     "sonner": "^1.7.4",
-    "stripe": "^17.7.0",
     "swr": "^2.3.3",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
@@ -69,6 +70,8 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
+    "@netlify/functions": "^6.0.0",
+    "@netlify/plugin-nextjs": "^5.16.0",
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22",
     "@types/pg": "^8.20.0",

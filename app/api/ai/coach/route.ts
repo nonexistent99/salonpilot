@@ -1,3 +1,4 @@
+import { hasActiveSubscription } from '@/lib/subscription-access';
 import { NextResponse } from 'next/server';
 import { requireSalon } from '@/lib/auth-server';
 import { generateInstagramContent, generateOwnerCoach } from '@/services/ai/ai-service';
@@ -7,6 +8,7 @@ export async function POST(req: Request) {
     const auth = await requireSalon();
     if (!auth) return NextResponse.json({ error: 'Nao autorizado.' }, { status: 401 });
 
+    if (!(await hasActiveSubscription(auth.salonId))) return NextResponse.json({ error: 'Assinatura ativa necessária.', checkout: '/checkout' }, { status: 402 });
     const body = await req.json();
     const { question, type } = body;
 

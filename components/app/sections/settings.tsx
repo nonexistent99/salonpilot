@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { Settings, Save, Scissors, Users, MapPin, Phone, Instagram, Briefcase, CheckCircle2 } from "lucide-react";
@@ -92,6 +93,7 @@ export function SettingsSection() {
         </button>
       </div>
 
+      <Link href="/setup" className="block rounded-xl border border-primary/30 bg-primary/5 p-5 text-primary font-semibold">Revisar serviços, horários e instruções da IA do WhatsApp e Instagram →</Link>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Salon data */}
         <div className="glass-card rounded-xl p-6">

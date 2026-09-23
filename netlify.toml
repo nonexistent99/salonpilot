@@ -1,0 +1,15 @@
+[build]
+command = "npm run build"
+publish = ".next"
+
+[build.environment]
+NODE_VERSION = "22"
+
+[[redirects]]
+from = "/api/*"
+to = "https://salonpilot-api-production-51d3.up.railway.app/api/:splat"
+status = 200
+force = true
+
+[[plugins]]
+package = "@netlify/plugin-nextjs"

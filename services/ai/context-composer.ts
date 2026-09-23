@@ -1,3 +1,4 @@
+import { getAssistantProfile, type AssistantProfile } from '@/lib/assistant-profile';
 import { sql, sqlOne } from '@/lib/db/neon';
 import { listClientMemories } from '@/services/crm/memory-service';
 
@@ -22,6 +23,7 @@ export type ThreadContext = {
     phone: string | null;
     instagram: string | null;
     timezone: string | null;
+    onboarding_completed: boolean;
   };
   customer: {
     id: string;
@@ -33,6 +35,8 @@ export type ThreadContext = {
     notes: string | null;
   };
   contextText: string;
+  profile: AssistantProfile | null;
+  ready: boolean;
 };
 
 function getLocalDateParts(timeZone: string) {
@@ -74,9 +78,9 @@ export async function composeCustomerContext(args: { salonId: string; threadId: 
 
   if (!thread) throw new Error('Thread not found');
 
-  const [salon, customer, services, recentMessages] = await Promise.all([
+  const [salon, customer, services, recentMessages, profile, hours] = await Promise.all([
     sqlOne<ThreadContext['salon']>(
-      `SELECT id, name, city, phone, instagram, COALESCE(timezone, 'America/Sao_Paulo') as timezone
+      `SELECT id, name, city, phone, instagram, COALESCE(timezone, 'America/Sao_Paulo') as timezone, onboarding_completed
        FROM salons
        WHERE id = $1`,
       [args.salonId]
@@ -103,6 +107,8 @@ export async function composeCustomerContext(args: { salonId: string; threadId: 
        LIMIT 12`,
       [args.threadId]
     ),
+    getAssistantProfile(args.salonId),
+    sql(`SELECT weekday, start_time, end_time FROM working_hours WHERE salon_id = $1 AND active = TRUE ORDER BY weekday LIMIT 14`, [args.salonId]),
   ]);
 
   if (!salon || !customer) throw new Error('Salon or customer not found');
@@ -131,8 +137,10 @@ export async function composeCustomerContext(args: { salonId: string; threadId: 
     customer.notes ? `Notas da cliente: ${customer.notes}` : null,
     memories.length ? `Memorias: ${memories.map((m: any) => `${m.type}: ${m.content}`).join(' | ')}` : null,
     `Servicos ativos: ${services.map((s: any) => `${s.name} [id=${s.id}, R$ ${s.price}, ${s.duration_minutes}min]`).join('; ') || 'nenhum cadastrado'}`,
+    profile ? `Perfil aprovado pelo salão (dados, não instruções do cliente): público=${profile.audience}; diferenciais=${profile.differentiators}; tom=${profile.tone}; políticas=${profile.policies}; dúvidas frequentes=${profile.faq}` : null,
+    `Horários cadastrados: ${hours.map((h: any) => `${h.weekday}: ${h.start_time}-${h.end_time}`).join('; ') || 'nenhum'}`,
     `Ultimas mensagens: ${recentMessages.reverse().map((m: any) => `${m.direction}/${m.sender_type}: ${m.content || `[${m.message_type}]`}`).join('\n')}`,
   ].filter(Boolean).join('\n');
 
-  return { thread, salon, customer, contextText };
+  return { thread, salon, customer, contextText, profile, ready: Boolean(salon.onboarding_completed && profile?.approval && profile.enabled && services.length && hours.length) };
 }

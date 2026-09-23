@@ -1,3 +1,4 @@
+import { getAssistantProfile } from '@/lib/assistant-profile';
 import { sql, sqlOne } from '@/lib/db/neon';
 import { estimateCostUsd } from './cost-estimator';
 import { createChatCompletion, resolveOpenAIModel } from './openai-client';
@@ -67,6 +68,8 @@ export async function generateOwnerCoach(args: {
   question?: string | null;
 }) {
   const model = await resolveOpenAIModel('strategic');
+  const daily = await sqlOne<{ count: string }>(`SELECT COUNT(*)::text AS count FROM ai_runs WHERE salon_id = $1 AND run_type = 'owner_coach' AND created_at >= NOW() - INTERVAL '1 day'`, [args.salonId]);
+  if (Number(daily?.count || 0) >= 30) throw new Error('Limite diário do coach atingido');
   const run = await createRun({ salonId: args.salonId, userId: args.userId, runType: 'owner_coach', model });
   if (!run) throw new Error('Unable to create ai_run');
 
@@ -85,9 +88,10 @@ export async function generateOwnerCoach(args: {
     ),
     sql(`SELECT name, price, duration_minutes FROM services WHERE salon_id = $1 AND active = TRUE LIMIT 12`, [args.salonId]),
     sqlOne(
-      `SELECT COUNT(*) as today_count
-       FROM appointments
-       WHERE salon_id = $1 AND DATE(start_time AT TIME ZONE 'America/Sao_Paulo') = CURRENT_DATE`,
+      `SELECT COUNT(*) FILTER (WHERE start_time >= NOW() AND start_time < NOW() + INTERVAL '7 days') AS upcoming_week,
+              COUNT(*) FILTER (WHERE status = 'completed' AND start_time >= NOW() - INTERVAL '30 days') AS completed_month,
+              COALESCE(SUM(value) FILTER (WHERE status = 'completed' AND start_time >= NOW() - INTERVAL '30 days'), 0) AS revenue_month
+       FROM appointments WHERE salon_id = $1`,
       [args.salonId]
     ),
   ]);
@@ -103,7 +107,7 @@ export async function generateOwnerCoach(args: {
         {
           role: 'user',
           content: JSON.stringify({
-            question: args.question || 'Gere recomendacoes prioritarias para hoje.',
+            question: (args.question || 'Gere recomendacoes prioritarias para hoje.').slice(0, 1200),
             salon,
             stats,
             services,
@@ -155,10 +159,11 @@ export async function generateInstagramContent(args: {
   if (!run) throw new Error('Unable to create ai_run');
 
   const started = Date.now();
-  const [salon, services, inactiveCount] = await Promise.all([
+  const [salon, services, inactiveCount, profile] = await Promise.all([
     sqlOne(`SELECT name, city, niche, instagram FROM salons WHERE id = $1`, [args.salonId]),
     sql(`SELECT name, price, duration_minutes FROM services WHERE salon_id = $1 AND active = TRUE LIMIT 12`, [args.salonId]),
     sqlOne(`SELECT COUNT(*) as count FROM customers WHERE salon_id = $1 AND status IN ('inactive', 'lost')`, [args.salonId]),
+    getAssistantProfile(args.salonId),
   ]);
 
   try {
@@ -178,6 +183,7 @@ export async function generateInstagramContent(args: {
             salon,
             services,
             inactive_customers: inactiveCount,
+            approved_brand_profile: profile ? { audience: profile.audience, differentiators: profile.differentiators, tone: profile.instagramVoice, policies: profile.policies } : null,
           }),
         },
       ],

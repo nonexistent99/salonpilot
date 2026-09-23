@@ -1,3 +1,4 @@
+import { decryptSecret } from '@/services/admin/encryption-service';
 import crypto from 'crypto';
 import { NextResponse, type NextRequest } from 'next/server';
 import { sql, sqlOne } from '@/lib/db/neon';
@@ -16,13 +17,18 @@ export async function POST(
   context: { params: Promise<{ accountId: string }> }
 ) {
   const { accountId } = await context.params;
-  const payload = await request.json();
   const account = await getWhatsAppAccount(accountId);
 
   if (!account) {
     return NextResponse.json({ error: 'WhatsApp account not found' }, { status: 404 });
   }
 
+  const expected = decryptSecret(account.webhook_token_encrypted);
+  const received = request.nextUrl.searchParams.get('token') || '';
+  if (!expected || !received || expected.length !== received.length || !crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(received))) {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+  }
+  const payload = await request.json();
   const normalized = normalizeEvolutionWebhook(payload);
   const eventHash = normalized?.eventHash || hashPayload(payload);
 
