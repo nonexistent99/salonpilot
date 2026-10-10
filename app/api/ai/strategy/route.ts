@@ -1,3 +1,4 @@
+import { hasActiveSubscription } from "@/lib/subscription-access";
 import { NextResponse } from "next/server";
 import { requireSalon } from "@/lib/auth-server";
 import { apiError } from "@/lib/api-error";
@@ -26,6 +27,11 @@ export async function POST() {
     const auth = await requireSalon();
     if (!auth)
       return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+    if (!(await hasActiveSubscription(auth.salonId)))
+      return NextResponse.json(
+        { error: "Assinatura ativa necessária.", checkout: "/checkout" },
+        { status: 402 },
+      );
     return NextResponse.json(
       await generateStrategy({ salonId: auth.salonId, userId: auth.user.id }),
     );

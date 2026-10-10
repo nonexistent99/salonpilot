@@ -7,7 +7,7 @@ O projeto está configurado para usar **conexão PostgreSQL direta** como princi
 ### Variáveis de Ambiente
 
 ```env
-DATABASE_URL=postgresql://postgres:94PJ8qjPhGZcEAp!@db.azeukzntqjpmdslgasji.supabase.co:5432/postgres
+DATABASE_URL=postgresql://USUARIO:SENHA@HOST:5432/BANCO
 ```
 
 Esta é a conexão **direta ao PostgreSQL** sem intermediários do Supabase client.
@@ -65,7 +65,7 @@ Esta é a conexão **direta ao PostgreSQL** sem intermediários do Supabase clie
 
 ### Testar Conexão
 ```bash
-psql postgresql://postgres:94PJ8qjPhGZcEAp!@db.azeukzntqjpmdslgasji.supabase.co:5432/postgres
+psql postgresql://USUARIO:SENHA@HOST:5432/BANCO
 ```
 
 ### Ver Status

@@ -11,16 +11,16 @@ import { NextResponse } from 'next/server';
 import { requireSalon } from '@/lib/auth-server';
 import { closeExperimentForCampaign } from '@/services/learning';
 
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
+export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await requireSalon();
     if (!auth) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
 
-    const resolved = await Promise.resolve(params);
+    const resolved = await params;
     const id = resolved.id;
     if (!id) return NextResponse.json({ error: 'campaign id requerido.' }, { status: 400 });
 
-    const result = await closeExperimentForCampaign(id);
+    const result = await closeExperimentForCampaign(id, auth.salonId);
     return NextResponse.json(result);
   } catch (err) {
     console.error('[campaigns/close-loop]', err);

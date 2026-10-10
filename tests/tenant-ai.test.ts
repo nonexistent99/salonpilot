@@ -314,6 +314,14 @@ test("Evolution webhook uses v2 payload and per-account authentication header", 
 });
 
 test("customer agent reads only the thread company and marks inbound after confirmed delivery", async () => {
+  const existing = await sqlOne("SELECT id FROM conversation_threads WHERE salon_id=$1 AND channel='instagram'", [a.salonId]);
+  const disabled = await runCustomerAgent({ salonId: a.salonId, threadId: existing.id });
+  assert.equal((disabled as any).reason, "Subscription not active");
+  await sql("INSERT INTO billing_subscriptions(salon_id,external_id,provider_id,plan,amount,status) VALUES($1,'test-sub-a','test-provider-a','starter',97,'ACTIVE')", [a.salonId]);
+  await sql("UPDATE salons SET onboarding_completed=TRUE WHERE id=$1", [a.salonId]);
+  await sql("INSERT INTO working_hours(salon_id,weekday,start_time,end_time) VALUES($1,1,'09:00','18:00')", [a.salonId]);
+  await sql("INSERT INTO services(salon_id,name,price,duration_minutes) VALUES($1,'Corte',80,60)", [a.salonId]);
+  await sql("INSERT INTO salon_settings(salon_id,key,value_json) VALUES($1,'assistant_profile',$2::jsonb)", [a.salonId, JSON.stringify({ tone:'Acolhedor', audience:'Clientes locais', differentiators:'Atendimento personalizado', policies:'Agendar somente com confirmação', faq:'', instagramVoice:'Direto e cordial', approval:true, enabled:true })]);
   const thread = await sqlOne(
     "SELECT * FROM conversation_threads WHERE salon_id=$1 AND channel='instagram'",
     [a.salonId],

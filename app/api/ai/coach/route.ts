@@ -1,3 +1,4 @@
+import { hasActiveSubscription } from "@/lib/subscription-access";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ownerChat } from "@/services/ai/owner-chat";
@@ -14,6 +15,11 @@ export async function POST(req: Request) {
     if (!auth)
       return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
 
+    if (!(await hasActiveSubscription(auth.salonId)))
+      return NextResponse.json(
+        { error: "Assinatura ativa necessária.", checkout: "/checkout" },
+        { status: 402 },
+      );
     const body = await req.json();
     const { question, type } = body;
     if (body.thread_id) {

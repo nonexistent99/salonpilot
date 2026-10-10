@@ -28,7 +28,7 @@ try {
   });
   const result = spawnSync(
     process.execPath,
-    ["--test", ".test-build/tenant-ai.test.cjs"],
+    [".test-build/tenant-ai.test.cjs"],
     { stdio: "inherit" },
   );
   process.exitCode = result.status || 0;

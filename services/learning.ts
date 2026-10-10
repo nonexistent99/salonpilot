@@ -91,12 +91,12 @@ interface LearningSynthesis {
  * computes success score, asks AI to synthesize learning, and writes
  * intelligence notes. Idempotent: if already completed, returns early.
  */
-export async function closeExperimentForCampaign(campaignId: string): Promise<{ closed: boolean; reason?: string; experimentId?: string }> {
+export async function closeExperimentForCampaign(campaignId: string, salonId: string): Promise<{ closed: boolean; reason?: string; experimentId?: string }> {
   const campaign = await sqlOne<CampaignTotals>(
     `SELECT id, sent_count, responded_count, booked_count, estimated_revenue, recipients_count,
             audience_filter_json
-       FROM campaigns WHERE id = $1`,
-    [campaignId]
+       FROM campaigns WHERE id = $1 AND salon_id = $2`,
+    [campaignId, salonId]
   );
   if (!campaign) return { closed: false, reason: 'campaign not found' };
 
@@ -106,8 +106,8 @@ export async function closeExperimentForCampaign(campaignId: string): Promise<{ 
   const exp = await sqlOne<ExperimentRow>(
     `SELECT id, salon_id, hypothesis, action_taken, audience_used, channel_used,
             message_used, offer_used, expected_result, actual_result, success_score, completed_at
-       FROM strategy_experiments WHERE id = $1`,
-    [experimentId]
+       FROM strategy_experiments WHERE id = $1 AND salon_id = $2`,
+    [experimentId, salonId]
   );
   if (!exp) return { closed: false, reason: 'experiment not found' };
   if (exp.completed_at) return { closed: false, reason: 'already completed', experimentId };

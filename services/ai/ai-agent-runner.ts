@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { hasActiveSubscription } from "@/lib/subscription-access";
 import { ApiError } from "@/lib/api-error";
 import { sql, sqlOne, transaction } from "@/lib/db/neon";
 import {
@@ -70,6 +71,14 @@ async function runLocked(args: RunArgs) {
     salonId: args.salonId,
     threadId: args.threadId,
   });
+  if (!(await hasActiveSubscription(args.salonId)))
+    return { skipped: true, reason: "Subscription not active" };
+
+  if (!context.ready)
+    return {
+      skipped: true,
+      reason: "Assistant needs approved salon setup, services and hours",
+    };
 
   if (!context.thread.ai_enabled || context.thread.status === "human_handoff") {
     return { skipped: true, reason: "AI disabled for thread" };

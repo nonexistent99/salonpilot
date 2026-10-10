@@ -82,6 +82,19 @@ export default function App() {
           router.replace("/auth/login");
           return;
         }
+        const salonRes = await fetch("/api/salons/me", {
+          credentials: "include",
+        });
+        if (salonRes.status === 401) {
+          router.replace("/auth/login");
+          return;
+        }
+        if (!salonRes.ok) throw new Error("Salon temporarily unavailable");
+        const salon = await salonRes.json();
+        if (!salon.onboarding_completed) {
+          router.replace("/setup");
+          return;
+        }
         setOwnerKey(`${user.salon_id}:${user.id}`);
         setAuthenticated(true);
         setLoading(false);
