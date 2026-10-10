@@ -1,9 +1,9 @@
 -- Instagram content, CRM memories, lead events, follow-ups and campaign approval.
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 
 CREATE TABLE IF NOT EXISTS instagram_contents (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   type TEXT NOT NULL,
   objective TEXT,
@@ -23,7 +23,7 @@ CREATE INDEX IF NOT EXISTS idx_instagram_contents_salon_status
   ON instagram_contents(salon_id, status, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS client_memories (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   type TEXT NOT NULL,
@@ -38,7 +38,7 @@ CREATE INDEX IF NOT EXISTS idx_client_memories_customer
   ON client_memories(customer_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS lead_events (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
   thread_id UUID REFERENCES conversation_threads(id) ON DELETE SET NULL,
@@ -53,7 +53,7 @@ CREATE INDEX IF NOT EXISTS idx_lead_events_customer
   ON lead_events(customer_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS follow_up_tasks (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   thread_id UUID REFERENCES conversation_threads(id) ON DELETE SET NULL,

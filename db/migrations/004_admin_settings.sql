@@ -1,9 +1,9 @@
 -- Platform admin settings, per-salon settings and audit logs.
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 
 CREATE TABLE IF NOT EXISTS platform_settings (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   key TEXT NOT NULL UNIQUE,
   value_json JSONB,
   value_encrypted TEXT,
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS platform_settings (
 );
 
 CREATE TABLE IF NOT EXISTS salon_settings (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   key TEXT NOT NULL,
   value_json JSONB,
@@ -29,7 +29,7 @@ CREATE INDEX IF NOT EXISTS idx_salon_settings_salon
   ON salon_settings(salon_id, key);
 
 CREATE TABLE IF NOT EXISTS admin_audit_logs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   admin_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   action TEXT NOT NULL,
   entity_type TEXT,

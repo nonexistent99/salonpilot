@@ -1,9 +1,9 @@
 -- AI observability and tool execution logs.
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 
 CREATE TABLE IF NOT EXISTS ai_runs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID REFERENCES salons(id) ON DELETE SET NULL,
   thread_id UUID REFERENCES conversation_threads(id) ON DELETE SET NULL,
   user_id UUID REFERENCES users(id) ON DELETE SET NULL,
@@ -35,7 +35,7 @@ COMMENT ON COLUMN ai_runs.response_id IS
   'Provider response id for observability only under the Chat Completions runtime.';
 
 CREATE TABLE IF NOT EXISTS tool_calls (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ai_run_id UUID REFERENCES ai_runs(id) ON DELETE SET NULL,
   salon_id UUID REFERENCES salons(id) ON DELETE SET NULL,
   thread_id UUID REFERENCES conversation_threads(id) ON DELETE SET NULL,
@@ -51,7 +51,7 @@ CREATE INDEX IF NOT EXISTS idx_tool_calls_thread
   ON tool_calls(thread_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS ai_usage_daily (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   date DATE NOT NULL,
   total_runs INTEGER DEFAULT 0,

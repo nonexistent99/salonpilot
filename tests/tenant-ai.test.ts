@@ -32,9 +32,6 @@ before(async () => {
   process.env.APP_ENCRYPTION_KEY = crypto.randomBytes(32).toString("hex");
   process.env.META_APP_SECRET = "test-signature-secret";
   process.env.META_GRAPH_VERSION = "v25.0";
-  await db.exec(
-    "CREATE FUNCTION uuid_generate_v4() RETURNS uuid LANGUAGE sql AS $$ SELECT gen_random_uuid() $$;",
-  );
   for (const file of (await readdir("db/migrations"))
     .filter((x) => x.endsWith(".sql"))
     .sort()) {

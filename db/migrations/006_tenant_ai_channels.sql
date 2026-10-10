@@ -1,6 +1,6 @@
 -- Additive migration. Run once through scripts/migrate.mjs before deploying.
 CREATE TABLE IF NOT EXISTS owner_ai_threads (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   title TEXT NOT NULL DEFAULT 'Nova conversa',
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS owner_ai_threads (
 );
 CREATE INDEX IF NOT EXISTS owner_ai_threads_owner ON owner_ai_threads(salon_id, user_id, updated_at DESC);
 CREATE TABLE IF NOT EXISTS owner_ai_turns (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   thread_id UUID NOT NULL,
   salon_id UUID NOT NULL,
   user_id UUID NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS salon_ai_settings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS instagram_accounts (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL UNIQUE REFERENCES salons(id) ON DELETE CASCADE,
   instagram_user_id TEXT NOT NULL UNIQUE,
   username TEXT NOT NULL,
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS instagram_accounts (
   UNIQUE(id, salon_id)
 );
 CREATE TABLE IF NOT EXISTS instagram_snapshots (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   username TEXT NOT NULL,
   source TEXT NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS instagram_snapshots (
 );
 CREATE INDEX IF NOT EXISTS instagram_snapshots_salon ON instagram_snapshots(salon_id, collected_at DESC);
 CREATE TABLE IF NOT EXISTS strategy_reports (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   report JSONB NOT NULL,
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS ai_reply_drafts (
  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS channel_outbox (
- id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+ id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
  salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
  thread_id UUID NOT NULL REFERENCES conversation_threads(id) ON DELETE CASCADE,
  idempotency_key TEXT NOT NULL UNIQUE,
@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS channel_outbox (
  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS instagram_scrape_jobs (
- id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+ id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
  salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
  username TEXT NOT NULL,
