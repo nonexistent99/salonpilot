@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import useSWR, { mutate } from "swr";
+import { useEffect, useState, useRef } from "react";
+import useSWR, { useSWRConfig } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import {
   Bot,
@@ -25,16 +25,21 @@ const STATUSES = [
 ];
 
 export function InboxSection() {
+  const { mutate } = useSWRConfig();
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reply, setReply] = useState("");
+  const [sendError, setSendError] = useState("");
+  const pending = useRef<{ thread: string; text: string; id: string } | null>(
+    null,
+  );
   const [sending, setSending] = useState(false);
 
   const { data, isLoading } = useSWR(
     `/api/inbox/threads?status=${encodeURIComponent(status)}&q=${encodeURIComponent(search)}`,
     fetcher,
-    { refreshInterval: 15000 }
+    { refreshInterval: 15000 },
   );
   const threads = data?.threads || [];
 
@@ -42,25 +47,46 @@ export function InboxSection() {
     if (!selectedId && threads.length > 0) setSelectedId(threads[0].id);
   }, [selectedId, threads]);
 
-  const { data: detail } = useSWR(selectedId ? `/api/inbox/threads/${selectedId}` : null, fetcher, {
-    refreshInterval: 15000,
-  });
-  const { data: messageData } = useSWR(selectedId ? `/api/inbox/threads/${selectedId}/messages` : null, fetcher, {
-    refreshInterval: 8000,
-  });
+  const { data: detail } = useSWR(
+    selectedId ? `/api/inbox/threads/${selectedId}` : null,
+    fetcher,
+    {
+      refreshInterval: 15000,
+    },
+  );
+  const { data: messageData } = useSWR(
+    selectedId ? `/api/inbox/threads/${selectedId}/messages` : null,
+    fetcher,
+    {
+      refreshInterval: 8000,
+    },
+  );
   const messages = messageData?.messages || [];
 
   async function sendReply() {
-    if (!selectedId || !reply.trim()) return;
+    if (!selectedId || !reply.trim() || sending) return;
+    const id = selectedId;
+    const text = reply.trim();
+    if (pending.current?.thread !== id || pending.current.text !== text)
+      pending.current = { thread: id, text, id: crypto.randomUUID() };
     setSending(true);
-    await fetch(`/api/inbox/threads/${selectedId}/reply`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: reply }),
-    });
-    setReply("");
-    await mutate(`/api/inbox/threads/${selectedId}/messages`);
-    setSending(false);
+    setSendError("");
+    try {
+      const res = await fetch(`/api/inbox/threads/${id}/reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, request_id: pending.current.id }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Não foi possível enviar.");
+      setReply("");
+      pending.current = null;
+      await mutate(`/api/inbox/threads/${id}/messages`);
+    } catch (error) {
+      setSendError((error as Error).message);
+    } finally {
+      setSending(false);
+    }
   }
 
   async function toggleAi(enabled: boolean) {
@@ -71,7 +97,9 @@ export function InboxSection() {
       body: JSON.stringify({ ai_enabled: enabled }),
     });
     await mutate(`/api/inbox/threads/${selectedId}`);
-    await mutate(`/api/inbox/threads?status=${encodeURIComponent(status)}&q=${encodeURIComponent(search)}`);
+    await mutate(
+      `/api/inbox/threads?status=${encodeURIComponent(status)}&q=${encodeURIComponent(search)}`,
+    );
   }
 
   async function handoff() {
@@ -91,29 +119,44 @@ export function InboxSection() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
+        {sendError && (
+          <p role="alert" className="text-sm text-red-600">
+            {sendError}
+          </p>
+        )}
         <div>
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-primary" />
             Inbox WhatsApp
           </h1>
-          <p className="text-sm text-muted-foreground">Conversas, IA, handoff e histórico do CRM</p>
+          <p className="text-sm text-muted-foreground">
+            Conversas, IA, handoff e histórico do CRM
+          </p>
         </div>
         {thread && (
           <div className="flex items-center gap-2">
             <button
               onClick={() => toggleAi(!thread.ai_enabled)}
               className={`h-9 px-3 rounded-lg text-xs font-medium border flex items-center gap-2 ${
-                thread.ai_enabled ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-border"
+                thread.ai_enabled
+                  ? "bg-primary/10 text-primary border-primary/20"
+                  : "bg-muted text-muted-foreground border-border"
               }`}
             >
               <Bot className="w-3.5 h-3.5" />
               IA {thread.ai_enabled ? "ativa" : "desligada"}
             </button>
-            <button onClick={handoff} className="h-9 px-3 rounded-lg border border-border text-xs font-medium hover:bg-muted flex items-center gap-2">
+            <button
+              onClick={handoff}
+              className="h-9 px-3 rounded-lg border border-border text-xs font-medium hover:bg-muted flex items-center gap-2"
+            >
               <UserCheck className="w-3.5 h-3.5" />
               Assumir
             </button>
-            <button onClick={closeThread} className="h-9 px-3 rounded-lg border border-border text-xs font-medium hover:bg-muted flex items-center gap-2">
+            <button
+              onClick={closeThread}
+              className="h-9 px-3 rounded-lg border border-border text-xs font-medium hover:bg-muted flex items-center gap-2"
+            >
               <CheckCircle2 className="w-3.5 h-3.5" />
               Encerrar
             </button>
@@ -139,7 +182,9 @@ export function InboxSection() {
                   key={item.value}
                   onClick={() => setStatus(item.value)}
                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border ${
-                    status === item.value ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground"
+                    status === item.value
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card border-border text-muted-foreground"
                   }`}
                 >
                   {item.label}
@@ -149,9 +194,13 @@ export function InboxSection() {
           </div>
           <div className="flex-1 overflow-auto">
             {isLoading ? (
-              <div className="py-12 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+              <div className="py-12 flex justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
             ) : threads.length === 0 ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">Nenhuma conversa encontrada</div>
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                Nenhuma conversa encontrada
+              </div>
             ) : (
               threads.map((item: any) => (
                 <button
@@ -163,10 +212,16 @@ export function InboxSection() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold truncate text-foreground">{item.customer_name || item.phone || "Cliente"}</p>
-                      <p className="text-xs text-muted-foreground truncate">{item.last_message_content || "Sem mensagens"}</p>
+                      <p className="text-sm font-semibold truncate text-foreground">
+                        {item.customer_name || item.phone || "Cliente"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {item.last_message_content || "Sem mensagens"}
+                      </p>
                     </div>
-                    <span className="text-[10px] rounded-md bg-secondary px-1.5 py-0.5 text-muted-foreground">{item.status}</span>
+                    <span className="text-[10px] rounded-md bg-secondary px-1.5 py-0.5 text-muted-foreground">
+                      {item.status}
+                    </span>
                   </div>
                 </button>
               ))
@@ -179,22 +234,44 @@ export function InboxSection() {
             <>
               <div className="h-14 border-b border-border px-4 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{thread.customer_name || "Cliente"}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> {thread.phone || thread.customer_phone}</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {thread.customer_name || "Cliente"}
+                  </p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Phone className="w-3 h-3" />{" "}
+                    {thread.phone || thread.customer_phone}
+                  </p>
                 </div>
-                <span className="text-xs text-muted-foreground">{thread.lead_stage || "new"}</span>
+                <span className="text-xs text-muted-foreground">
+                  {thread.lead_stage || "new"}
+                </span>
               </div>
               <div className="flex-1 overflow-auto p-4 space-y-3 bg-muted/20">
                 {messages.map((message: any) => {
                   const outbound = message.direction === "outbound";
                   return (
-                    <div key={message.id} className={`flex ${outbound ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[78%] rounded-xl px-3 py-2 text-sm ${
-                        outbound ? "bg-primary text-primary-foreground" : "bg-card border border-border text-foreground"
-                      }`}>
-                        <p className="whitespace-pre-wrap break-words">{message.content || `[${message.message_type}]`}</p>
-                        <p className={`text-[10px] mt-1 ${outbound ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                          {message.sender_type} · {new Date(message.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    <div
+                      key={message.id}
+                      className={`flex ${outbound ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[78%] rounded-xl px-3 py-2 text-sm ${
+                          outbound
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-card border border-border text-foreground"
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap break-words">
+                          {message.content || `[${message.message_type}]`}
+                        </p>
+                        <p
+                          className={`text-[10px] mt-1 ${outbound ? "text-primary-foreground/70" : "text-muted-foreground"}`}
+                        >
+                          {message.sender_type} ·{" "}
+                          {new Date(message.created_at).toLocaleTimeString(
+                            "pt-BR",
+                            { hour: "2-digit", minute: "2-digit" },
+                          )}
                         </p>
                       </div>
                     </div>
@@ -214,49 +291,95 @@ export function InboxSection() {
                   className="w-11 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50"
                   title="Enviar"
                 >
-                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {sending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Selecione uma conversa</div>
+            <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
+              Selecione uma conversa
+            </div>
           )}
         </div>
 
         <div className="space-y-4">
           <div className="glass-card rounded-xl p-4">
-            <h2 className="text-sm font-semibold text-foreground mb-3">Cliente</h2>
+            <h2 className="text-sm font-semibold text-foreground mb-3">
+              Cliente
+            </h2>
             {thread ? (
               <div className="space-y-2 text-sm">
-                <p><span className="text-muted-foreground">Status:</span> {thread.lifecycle_status || thread.status}</p>
-                <p><span className="text-muted-foreground">Servico:</span> {thread.service_name || "sem foco"}</p>
-                <p><span className="text-muted-foreground">Ticket:</span> R$ {Number(thread.average_ticket || 0).toFixed(0)}</p>
-                <p><span className="text-muted-foreground">Total:</span> R$ {Number(thread.total_spent || 0).toFixed(0)}</p>
+                <p>
+                  <span className="text-muted-foreground">Status:</span>{" "}
+                  {thread.lifecycle_status || thread.status}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Servico:</span>{" "}
+                  {thread.service_name || "sem foco"}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Ticket:</span> R${" "}
+                  {Number(thread.average_ticket || 0).toFixed(0)}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Total:</span> R${" "}
+                  {Number(thread.total_spent || 0).toFixed(0)}
+                </p>
               </div>
-            ) : <p className="text-sm text-muted-foreground">Sem cliente selecionada</p>}
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Sem cliente selecionada
+              </p>
+            )}
           </div>
           <div className="glass-card rounded-xl p-4">
-            <h2 className="text-sm font-semibold text-foreground mb-3">Tool calls</h2>
+            <h2 className="text-sm font-semibold text-foreground mb-3">
+              Tool calls
+            </h2>
             <div className="space-y-2">
               {(detail?.tool_calls || []).slice(0, 8).map((call: any) => (
-                <div key={`${call.name}-${call.created_at}`} className="flex items-center justify-between text-xs rounded-lg bg-secondary/40 px-2 py-1.5">
+                <div
+                  key={`${call.name}-${call.created_at}`}
+                  className="flex items-center justify-between text-xs rounded-lg bg-secondary/40 px-2 py-1.5"
+                >
                   <span>{call.name}</span>
-                  {call.status === "success" ? <CheckCircle2 className="w-3 h-3 text-green-600" /> : <XCircle className="w-3 h-3 text-destructive" />}
+                  {call.status === "success" ? (
+                    <CheckCircle2 className="w-3 h-3 text-green-600" />
+                  ) : (
+                    <XCircle className="w-3 h-3 text-destructive" />
+                  )}
                 </div>
               ))}
-              {!detail?.tool_calls?.length && <p className="text-xs text-muted-foreground">Nenhuma tool chamada</p>}
+              {!detail?.tool_calls?.length && (
+                <p className="text-xs text-muted-foreground">
+                  Nenhuma tool chamada
+                </p>
+              )}
             </div>
           </div>
           <div className="glass-card rounded-xl p-4">
-            <h2 className="text-sm font-semibold text-foreground mb-3">Memorias</h2>
+            <h2 className="text-sm font-semibold text-foreground mb-3">
+              Memorias
+            </h2>
             <div className="space-y-2">
               {(detail?.memories || []).map((memory: any) => (
-                <div key={memory.id} className="text-xs rounded-lg bg-secondary/40 px-2 py-1.5">
+                <div
+                  key={memory.id}
+                  className="text-xs rounded-lg bg-secondary/40 px-2 py-1.5"
+                >
                   <p className="font-medium">{memory.type}</p>
                   <p className="text-muted-foreground">{memory.content}</p>
                 </div>
               ))}
-              {!detail?.memories?.length && <p className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> Sem memorias ainda</p>}
+              {!detail?.memories?.length && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Sem memorias ainda
+                </p>
+              )}
             </div>
           </div>
         </div>

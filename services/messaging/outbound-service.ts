@@ -1,6 +1,6 @@
-import { sql, sqlOne } from '@/lib/db/neon';
-import { getMessagingProvider, getWhatsAppAccount } from './messaging-service';
-import { normalizePhone } from '@/services/crm/client-service';
+import { sql, sqlOne } from "@/lib/db/neon";
+import { getMessagingProvider, getWhatsAppAccount } from "./messaging-service";
+import { normalizePhone } from "@/services/crm/client-service";
 
 export async function sendWhatsAppText(args: {
   salonId: string;
@@ -9,13 +9,32 @@ export async function sendWhatsAppText(args: {
   customerId?: string | null;
   toPhone: string;
   text: string;
-  senderType?: 'ai' | 'human' | 'system';
+  senderType?: "ai" | "human" | "system";
 }) {
   const account = await getWhatsAppAccount(args.accountId);
   if (!account || account.salon_id !== args.salonId) {
-    throw new Error('WhatsApp account not found');
+    throw new Error("WhatsApp account not found");
   }
 
+  if (args.customerId) {
+    const customer = await sqlOne(
+      "SELECT id FROM customers WHERE salon_id=$1 AND id=$2",
+      [args.salonId, args.customerId],
+    );
+    if (!customer) throw new Error("Customer not found");
+  }
+  if (args.threadId) {
+    const thread = await sqlOne(
+      "SELECT customer_id,phone FROM conversation_threads WHERE salon_id=$1 AND id=$2 AND whatsapp_account_id=$3",
+      [args.salonId, args.threadId, args.accountId],
+    );
+    if (
+      !thread ||
+      normalizePhone(thread.phone || "") !== normalizePhone(args.toPhone) ||
+      (args.customerId && thread.customer_id !== args.customerId)
+    )
+      throw new Error("Thread not found");
+  }
   const provider = await getMessagingProvider(account);
   const to = normalizePhone(args.toPhone);
 
@@ -23,18 +42,26 @@ export async function sendWhatsAppText(args: {
     `INSERT INTO whatsapp_outbox (salon_id, whatsapp_account_id, thread_id, customer_id, to_phone, content, status)
      VALUES ($1, $2, $3, $4, $5, $6, 'pending')
      RETURNING id`,
-    [args.salonId, args.accountId, args.threadId || null, args.customerId || null, to, args.text]
+    [
+      args.salonId,
+      args.accountId,
+      args.threadId || null,
+      args.customerId || null,
+      to,
+      args.text,
+    ],
   );
 
   try {
     const result: any = await provider.sendText({ to, text: args.text });
-    const providerMessageId = result?.key?.id || result?.messageId || result?.id || null;
+    const providerMessageId =
+      result?.key?.id || result?.messageId || result?.id || null;
 
     await sql(
       `UPDATE whatsapp_outbox
        SET status = 'sent', provider_message_id = $2, sent_at = NOW(), updated_at = NOW()
        WHERE id = $1`,
-      [outbox?.id, providerMessageId]
+      [outbox?.id, providerMessageId],
     );
 
     if (args.threadId) {
@@ -49,17 +76,17 @@ export async function sendWhatsAppText(args: {
           args.threadId,
           args.customerId || null,
           args.accountId,
-          args.senderType || 'ai',
+          args.senderType || "ai",
           providerMessageId,
           args.text,
-        ]
+        ],
       );
 
       await sql(
         `UPDATE conversation_threads
          SET last_outbound_at = NOW(), last_message_at = NOW(), updated_at = NOW()
          WHERE salon_id = $1 AND id = $2`,
-        [args.salonId, args.threadId]
+        [args.salonId, args.threadId],
       );
     }
 
@@ -69,7 +96,7 @@ export async function sendWhatsAppText(args: {
       `UPDATE whatsapp_outbox
        SET status = 'failed', error_message = $2, updated_at = NOW()
        WHERE id = $1`,
-      [outbox?.id, error instanceof Error ? error.message : 'Unknown error']
+      [outbox?.id, error instanceof Error ? error.message : "Unknown error"],
     );
     throw error;
   }

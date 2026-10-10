@@ -1,9 +1,9 @@
 -- WhatsApp, inbox and message persistence.
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 
 CREATE TABLE IF NOT EXISTS whatsapp_accounts (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   provider TEXT NOT NULL DEFAULT 'evolution',
   evolution_base_url TEXT,
@@ -26,7 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_whatsapp_accounts_salon
   ON whatsapp_accounts(salon_id, status);
 
 CREATE TABLE IF NOT EXISTS conversation_threads (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
   whatsapp_account_id UUID REFERENCES whatsapp_accounts(id) ON DELETE SET NULL,
@@ -65,7 +65,7 @@ COMMENT ON COLUMN conversation_threads.previous_response_id IS
   'Deprecated/reserved. Chat Completions response ids are not memory; use only after a Responses API migration that explicitly supports previous_response_id.';
 
 CREATE TABLE IF NOT EXISTS messages (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   thread_id UUID NOT NULL REFERENCES conversation_threads(id) ON DELETE CASCADE,
   customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
@@ -98,7 +98,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_messages_provider_unique
   WHERE provider_message_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS whatsapp_events (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   whatsapp_account_id UUID REFERENCES whatsapp_accounts(id) ON DELETE SET NULL,
   salon_id UUID REFERENCES salons(id) ON DELETE SET NULL,
   provider TEXT DEFAULT 'evolution',
@@ -116,7 +116,7 @@ CREATE INDEX IF NOT EXISTS idx_whatsapp_events_account_created
   ON whatsapp_events(whatsapp_account_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS whatsapp_outbox (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   whatsapp_account_id UUID REFERENCES whatsapp_accounts(id) ON DELETE SET NULL,
   thread_id UUID REFERENCES conversation_threads(id) ON DELETE SET NULL,
@@ -138,7 +138,7 @@ CREATE INDEX IF NOT EXISTS idx_whatsapp_outbox_pending
   ON whatsapp_outbox(status, scheduled_for);
 
 CREATE TABLE IF NOT EXISTS message_batches (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   thread_id UUID NOT NULL REFERENCES conversation_threads(id) ON DELETE CASCADE,
   status TEXT DEFAULT 'scheduled',

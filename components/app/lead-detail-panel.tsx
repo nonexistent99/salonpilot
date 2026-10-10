@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { mutate } from "swr";
+import { useSWRConfig } from "swr";
 import type { Lead } from "@/app/page";
 import {
   X,
@@ -31,6 +31,7 @@ interface LeadDetailPanelProps {
 }
 
 export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
+  const { mutate } = useSWRConfig();
   const [currentLead, setCurrentLead] = useState<Lead>(lead);
   const [scheduling, setScheduling] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
@@ -40,7 +41,9 @@ export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
   const [scriptError, setScriptError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<Record<string, unknown> | null>(null);
+  const [analysis, setAnalysis] = useState<Record<string, unknown> | null>(
+    null,
+  );
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   const handleSchedule = async () => {
@@ -56,8 +59,9 @@ export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
           status: "scheduled",
         }),
       });
-      mutate((key: string) =>
-        typeof key === "string" && key.startsWith("/api/meetings")
+      mutate(
+        (key: string) =>
+          typeof key === "string" && key.startsWith("/api/meetings"),
       );
       mutate("/api/dashboard");
       setScheduled(true);
@@ -71,10 +75,9 @@ export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
     setGeneratingScript(true);
     setScriptError(null);
     try {
-      const res = await fetch(
-        `/api/leads/${currentLead.id}/generate-script`,
-        { method: "POST" }
-      );
+      const res = await fetch(`/api/leads/${currentLead.id}/generate-script`, {
+        method: "POST",
+      });
       const data = await res.json();
 
       if (!res.ok) {
@@ -104,7 +107,9 @@ export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
     setAnalyzing(true);
     setAnalysisError(null);
     try {
-      const res = await fetch(`/api/leads/${currentLead.id}/analyze`, { method: "POST" });
+      const res = await fetch(`/api/leads/${currentLead.id}/analyze`, {
+        method: "POST",
+      });
       const data = await res.json();
       if (!res.ok) {
         setAnalysisError(data.error || "Erro ao analisar");
@@ -112,7 +117,11 @@ export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
       }
       setAnalysis(data.analysis);
       if (data.analysis?.opportunity_score) {
-        setCurrentLead((prev) => ({ ...prev, opportunity_score: data.analysis.opportunity_score, score_ia: data.analysis.opportunity_score }));
+        setCurrentLead((prev) => ({
+          ...prev,
+          opportunity_score: data.analysis.opportunity_score,
+          score_ia: data.analysis.opportunity_score,
+        }));
       }
       mutate("/api/leads");
       mutate("/api/dashboard");
@@ -125,8 +134,7 @@ export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
   };
 
   const score = currentLead.opportunity_score ?? currentLead.score_ia;
-  const reviewsNum =
-    currentLead.reviews_count ?? currentLead.reviews ?? 0;
+  const reviewsNum = currentLead.reviews_count ?? currentLead.reviews ?? 0;
 
   const whatsappUrl = currentLead.phone
     ? `https://wa.me/55${currentLead.phone.replace(/\D/g, "")}`
@@ -229,12 +237,37 @@ export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
           <div className="flex flex-wrap gap-1.5">
             {(
               [
-                { key: "new", label: "Novo", style: "bg-chart-2/10 text-chart-2 border-chart-2/20" },
-                { key: "contacted", label: "Contatado", style: "bg-warning/10 text-warning border-warning/20" },
-                { key: "meeting_scheduled", label: "Reuniao", style: "bg-primary/10 text-primary border-primary/20" },
-                { key: "proposal_sent", label: "Proposta", style: "bg-chart-4/10 text-chart-4 border-chart-4/20" },
-                { key: "closed_won", label: "Fechado", style: "bg-chart-1/10 text-chart-1 border-chart-1/20" },
-                { key: "closed_lost", label: "Perdido", style: "bg-destructive/10 text-destructive border-destructive/20" },
+                {
+                  key: "new",
+                  label: "Novo",
+                  style: "bg-chart-2/10 text-chart-2 border-chart-2/20",
+                },
+                {
+                  key: "contacted",
+                  label: "Contatado",
+                  style: "bg-warning/10 text-warning border-warning/20",
+                },
+                {
+                  key: "meeting_scheduled",
+                  label: "Reuniao",
+                  style: "bg-primary/10 text-primary border-primary/20",
+                },
+                {
+                  key: "proposal_sent",
+                  label: "Proposta",
+                  style: "bg-chart-4/10 text-chart-4 border-chart-4/20",
+                },
+                {
+                  key: "closed_won",
+                  label: "Fechado",
+                  style: "bg-chart-1/10 text-chart-1 border-chart-1/20",
+                },
+                {
+                  key: "closed_lost",
+                  label: "Perdido",
+                  style:
+                    "bg-destructive/10 text-destructive border-destructive/20",
+                },
               ] as const
             ).map((s) => (
               <button
@@ -252,7 +285,10 @@ export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
                   });
                   if (res.ok) {
                     const updated = await res.json();
-                    setCurrentLead((prev) => ({ ...prev, status: updated.status }));
+                    setCurrentLead((prev) => ({
+                      ...prev,
+                      status: updated.status,
+                    }));
                     mutate("/api/leads");
                     mutate("/api/dashboard");
                   }
@@ -261,7 +297,7 @@ export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
                   "px-2.5 py-1 rounded-md text-xs font-medium border transition-all",
                   currentLead.status === s.key
                     ? s.style
-                    : "bg-secondary/30 text-muted-foreground border-border hover:bg-secondary/60"
+                    : "bg-secondary/30 text-muted-foreground border-border hover:bg-secondary/60",
                 )}
               >
                 {s.label}
@@ -334,39 +370,58 @@ export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
               <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
                 <div className="flex items-center gap-2 mb-2">
                   <Target className="w-4 h-4 text-primary" />
-                  <span className="text-xs font-semibold text-foreground">Score: {analysis.opportunity_score as number}/100</span>
+                  <span className="text-xs font-semibold text-foreground">
+                    Score: {analysis.opportunity_score as number}/100
+                  </span>
                 </div>
               </div>
               <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/10">
                 <div className="flex items-center gap-2 mb-1.5">
                   <Shield className="w-3.5 h-3.5 text-destructive" />
-                  <span className="text-xs font-semibold text-foreground">Fraqueza de Marketing</span>
+                  <span className="text-xs font-semibold text-foreground">
+                    Fraqueza de Marketing
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">{analysis.marketing_weakness as string}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {analysis.marketing_weakness as string}
+                </p>
               </div>
               <div className="p-3 rounded-lg bg-chart-2/5 border border-chart-2/10">
                 <div className="flex items-center gap-2 mb-1.5">
                   <Lightbulb className="w-3.5 h-3.5 text-chart-2" />
-                  <span className="text-xs font-semibold text-foreground">Estrategia de Oferta</span>
+                  <span className="text-xs font-semibold text-foreground">
+                    Estrategia de Oferta
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">{analysis.offer_strategy as string}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {analysis.offer_strategy as string}
+                </p>
               </div>
               <div className="p-3 rounded-lg bg-warning/5 border border-warning/10">
                 <div className="flex items-center gap-2 mb-1.5">
                   <Clock className="w-3.5 h-3.5 text-warning" />
-                  <span className="text-xs font-semibold text-foreground">Melhor Horario</span>
+                  <span className="text-xs font-semibold text-foreground">
+                    Melhor Horario
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground">{analysis.best_contact_time as string}</p>
+                <p className="text-xs text-muted-foreground">
+                  {analysis.best_contact_time as string}
+                </p>
               </div>
-              {typeof analysis.cold_call_script === "string" && analysis.cold_call_script && (
-                <div className="p-3 rounded-lg bg-success/5 border border-success/10">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Phone className="w-3.5 h-3.5 text-success" />
-                    <span className="text-xs font-semibold text-foreground">Script de Ligacao</span>
+              {typeof analysis.cold_call_script === "string" &&
+                analysis.cold_call_script && (
+                  <div className="p-3 rounded-lg bg-success/5 border border-success/10">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Phone className="w-3.5 h-3.5 text-success" />
+                      <span className="text-xs font-semibold text-foreground">
+                        Script de Ligacao
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {analysis.cold_call_script as string}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{analysis.cold_call_script as string}</p>
-                </div>
-              )}
+                )}
             </div>
           ) : (
             <div className="flex flex-col gap-2">

@@ -31,6 +31,8 @@ interface BillingData {
   totalActive: number;
   totalInactive: number;
   mrr: number;
+  collectedMonth: number;
+  paymentCount: number;
   revenuePerPlan: Record<string, { count: number; revenue: number }>;
   subscriptions: Subscription[];
 }
@@ -50,6 +52,8 @@ export default function AdminBillingPage() {
     totalActive: 0,
     totalInactive: 0,
     mrr: 0,
+    collectedMonth: 0,
+    paymentCount: 0,
     revenuePerPlan: {},
     subscriptions: [],
   };
@@ -77,7 +81,7 @@ export default function AdminBillingPage() {
               R$ {(d.mrr ?? 0).toLocaleString("pt-BR")}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Receita Mensal Recorrente
+              Receita mensal prevista pelas assinaturas ativas
             </p>
           </CardContent>
         </Card>
@@ -111,7 +115,7 @@ export default function AdminBillingPage() {
               {d.totalInactive ?? 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Assinaturas inativas
+              Pendentes, atrasadas ou canceladas
             </p>
           </CardContent>
         </Card>
@@ -119,19 +123,17 @@ export default function AdminBillingPage() {
         <Card className="bg-card/50 border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Ticket Medio
+              Recebido no mês
             </CardTitle>
             <CreditCard className="w-4 h-4 text-chart-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
               R${" "}
-              {(d.totalActive ?? 0) > 0
-                ? ((d.mrr ?? 0) / d.totalActive).toFixed(0)
-                : 0}
+              {(d.collectedMonth ?? 0).toLocaleString("pt-BR")}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Por assinatura
+              {d.paymentCount ?? 0} cobrança(s) confirmada(s) pela Sunize
             </p>
           </CardContent>
         </Card>

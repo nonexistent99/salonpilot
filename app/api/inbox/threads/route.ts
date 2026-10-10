@@ -1,15 +1,16 @@
-import { NextResponse } from 'next/server';
-import { requireSalon } from '@/lib/auth-server';
-import { sql } from '@/lib/db/neon';
+import { NextResponse } from "next/server";
+import { requireSalon } from "@/lib/auth-server";
+import { sql } from "@/lib/db/neon";
 
 export async function GET(request: Request) {
   const auth = await requireSalon();
-  if (!auth) return NextResponse.json({ error: 'Nao autorizado.' }, { status: 401 });
+  if (!auth)
+    return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
-  const status = searchParams.get('status');
-  const q = searchParams.get('q');
-  const leadStage = searchParams.get('lead_stage');
+  const status = searchParams.get("status");
+  const q = searchParams.get("q");
+  const leadStage = searchParams.get("lead_stage");
 
   const params: unknown[] = [auth.salonId];
   let where = `WHERE t.salon_id = $1`;
@@ -43,20 +44,20 @@ export async function GET(request: Request) {
             lm.content as last_message_content,
             lm.direction as last_message_direction
      FROM conversation_threads t
-     LEFT JOIN customers c ON c.id = t.customer_id
-     LEFT JOIN services s ON s.id = t.service_in_focus_id
-     LEFT JOIN appointments a ON a.id = t.appointment_id
+     LEFT JOIN customers c ON c.id = t.customer_id AND c.salon_id = t.salon_id
+     LEFT JOIN services s ON s.id = t.service_in_focus_id AND s.salon_id = t.salon_id
+     LEFT JOIN appointments a ON a.id = t.appointment_id AND a.salon_id = t.salon_id
      LEFT JOIN LATERAL (
        SELECT content, direction
        FROM messages m
-       WHERE m.thread_id = t.id
+       WHERE m.thread_id = t.id AND m.salon_id = t.salon_id
        ORDER BY created_at DESC
        LIMIT 1
      ) lm ON TRUE
      ${where}
      ORDER BY t.last_message_at DESC NULLS LAST
      LIMIT 100`,
-    params
+    params,
   );
 
   return NextResponse.json({ threads });

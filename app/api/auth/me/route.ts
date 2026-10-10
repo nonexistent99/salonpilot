@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { getUser } from '@/lib/auth-server';
+import { NextResponse } from "next/server";
+import { getUser } from "@/lib/auth-server";
 
 export async function GET() {
   try {
@@ -7,9 +7,12 @@ export async function GET() {
     if (!user) {
       return NextResponse.json({ user: null }, { status: 401 });
     }
-    return NextResponse.json({ user });
+    return NextResponse.json(
+      { user },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
   } catch (err) {
-    console.error('[API /auth/me]', err);
-    return NextResponse.json({ user: null }, { status: 500 });
+    console.error("[API /auth/me]", err);
+    return NextResponse.json({ user: null }, { status: 503 });
   }
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import useSWR, { mutate } from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import type { Lead } from "@/app/page";
 import {
@@ -48,6 +48,7 @@ function getLeadScore(lead: Lead) {
 }
 
 export function SearchSection({ onLeadSelect }: SearchSectionProps) {
+  const { mutate } = useSWRConfig();
   const [city, setCity] = useState("");
   const [niche, setNiche] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -62,7 +63,7 @@ export function SearchSection({ onLeadSelect }: SearchSectionProps) {
     searches_limit: number;
   } | null>(null);
   const [generatingScriptId, setGeneratingScriptId] = useState<string | null>(
-    null
+    null,
   );
   const [sortBy, setSortBy] = useState<"score" | "rating">("score");
 
@@ -130,9 +131,7 @@ export function SearchSection({ onLeadSelect }: SearchSectionProps) {
 
       // Update the lead in results with the new script
       setResults((prev) =>
-        prev.map((l) =>
-          l.id === lead.id ? { ...l, script: data.script } : l
-        )
+        prev.map((l) => (l.id === lead.id ? { ...l, script: data.script } : l)),
       );
 
       // Revalidate leads + credits
@@ -152,8 +151,7 @@ export function SearchSection({ onLeadSelect }: SearchSectionProps) {
 
   // Sort
   filtered.sort((a, b) => {
-    if (sortBy === "score")
-      return getLeadScore(b) - getLeadScore(a);
+    if (sortBy === "score") return getLeadScore(b) - getLeadScore(a);
     return b.rating - a.rating;
   });
 
@@ -208,7 +206,7 @@ export function SearchSection({ onLeadSelect }: SearchSectionProps) {
               "h-10 px-3 rounded-lg border border-border text-sm flex items-center gap-2 transition-all",
               showFilters
                 ? "bg-primary/10 text-primary border-primary/30"
-                : "bg-secondary/50 text-muted-foreground hover:text-foreground"
+                : "bg-secondary/50 text-muted-foreground hover:text-foreground",
             )}
           >
             <SlidersHorizontal className="w-4 h-4" />
@@ -311,9 +309,7 @@ export function SearchSection({ onLeadSelect }: SearchSectionProps) {
             )}
           </p>
           <button
-            onClick={() =>
-              setSortBy(sortBy === "score" ? "rating" : "score")
-            }
+            onClick={() => setSortBy(sortBy === "score" ? "rating" : "score")}
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowUpDown className="w-3.5 h-3.5" />
@@ -323,15 +319,18 @@ export function SearchSection({ onLeadSelect }: SearchSectionProps) {
       )}
 
       {/* Saved leads count */}
-      {savedLeads && savedLeads.length > 0 && results.length === 0 && !isSearching && (
-        <div className="text-xs text-muted-foreground">
-          Voce tem{" "}
-          <span className="text-foreground font-semibold">
-            {savedLeads.length}
-          </span>{" "}
-          leads salvos no seu CRM
-        </div>
-      )}
+      {savedLeads &&
+        savedLeads.length > 0 &&
+        results.length === 0 &&
+        !isSearching && (
+          <div className="text-xs text-muted-foreground">
+            Voce tem{" "}
+            <span className="text-foreground font-semibold">
+              {savedLeads.length}
+            </span>{" "}
+            leads salvos no seu CRM
+          </div>
+        )}
 
       {/* Results grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -363,7 +362,7 @@ export function SearchSection({ onLeadSelect }: SearchSectionProps) {
                   <span
                     className={cn(
                       "px-2 py-0.5 rounded-md text-xs font-medium border shrink-0 ml-2",
-                      badge.color
+                      badge.color,
                     )}
                   >
                     {badge.label}
@@ -388,7 +387,7 @@ export function SearchSection({ onLeadSelect }: SearchSectionProps) {
                       "px-2 py-0.5 rounded text-xs",
                       lead.has_website
                         ? "bg-success/10 text-success"
-                        : "bg-destructive/10 text-destructive"
+                        : "bg-destructive/10 text-destructive",
                     )}
                   >
                     <Globe className="w-3 h-3 inline mr-1" />
@@ -420,7 +419,7 @@ export function SearchSection({ onLeadSelect }: SearchSectionProps) {
                           ? "bg-success"
                           : score >= 40
                             ? "bg-warning"
-                            : "bg-muted-foreground"
+                            : "bg-muted-foreground",
                       )}
                       style={{ width: `${score}%` }}
                     />
@@ -444,9 +443,7 @@ export function SearchSection({ onLeadSelect }: SearchSectionProps) {
                       e.stopPropagation();
                       handleGenerateScript(lead);
                     }}
-                    disabled={
-                      generatingScriptId === lead.id || !!lead.script
-                    }
+                    disabled={generatingScriptId === lead.id || !!lead.script}
                     className="h-8 px-3 rounded-lg bg-chart-2/10 text-chart-2 text-xs hover:bg-chart-2/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                   >
                     {generatingScriptId === lead.id ? (

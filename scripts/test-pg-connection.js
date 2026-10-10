@@ -1,7 +1,7 @@
 import pkg from 'pg';
 const { Client } = pkg;
 
-const connectionString = 'postgresql://postgres:94PJ8qjPhGZcEAp!@db.azeukzntqjpmdslgasji.supabase.co:5432/postgres';
+const connectionString = 'postgresql://USUARIO:SENHA@HOST:5432/BANCO';
 
 const client = new Client({
   connectionString: connectionString,

@@ -1,10 +1,10 @@
 -- SalonPilot core CRM and scheduling tables.
 -- This project already uses customers as the client table; keep it as the source of truth.
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 
 CREATE TABLE IF NOT EXISTS salons (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   owner_name TEXT,
   phone TEXT,
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS salons (
 );
 
 CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID REFERENCES salons(id) ON DELETE SET NULL,
   name TEXT,
   full_name TEXT,
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   token TEXT NOT NULL UNIQUE,
   expires_at TIMESTAMPTZ NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 CREATE TABLE IF NOT EXISTS services (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   category TEXT,
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS services (
 );
 
 CREATE TABLE IF NOT EXISTS professionals (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   role TEXT,
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS professionals (
 );
 
 CREATE TABLE IF NOT EXISTS customers (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   phone TEXT,
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS customers (
 );
 
 CREATE TABLE IF NOT EXISTS customer_tags (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   color TEXT DEFAULT '#C78A6A'
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS customer_tag_relations (
 );
 
 WITH duplicate_tags AS (
-  SELECT id, MIN(id) OVER (PARTITION BY salon_id, lower(name)) AS keep_id
+  SELECT id, FIRST_VALUE(id) OVER (PARTITION BY salon_id, lower(name) ORDER BY id) AS keep_id
   FROM customer_tags
 ),
 relations_to_keep AS (
@@ -122,7 +122,7 @@ WHERE ctr.tag_id = duplicate_tags.id
   AND duplicate_tags.id <> duplicate_tags.keep_id;
 
 WITH duplicate_tags AS (
-  SELECT id, MIN(id) OVER (PARTITION BY salon_id, lower(name)) AS keep_id
+  SELECT id, FIRST_VALUE(id) OVER (PARTITION BY salon_id, lower(name) ORDER BY id) AS keep_id
   FROM customer_tags
 )
 DELETE FROM customer_tags tags
@@ -134,7 +134,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_customer_tags_salon_lower_name_unique
   ON customer_tags(salon_id, lower(name));
 
 CREATE TABLE IF NOT EXISTS appointments (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
   professional_id UUID REFERENCES professionals(id) ON DELETE SET NULL,
@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS appointments (
 );
 
 CREATE TABLE IF NOT EXISTS campaigns (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   objective TEXT,
@@ -174,7 +174,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
 );
 
 CREATE TABLE IF NOT EXISTS campaign_recipients (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   status TEXT DEFAULT 'pending',
@@ -221,7 +221,7 @@ CREATE INDEX IF NOT EXISTS idx_professional_services_service_id
   ON professional_services(service_id);
 
 CREATE TABLE IF NOT EXISTS working_hours (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   professional_id UUID REFERENCES professionals(id) ON DELETE CASCADE,
   weekday INTEGER NOT NULL CHECK (weekday BETWEEN 0 AND 6),
@@ -236,7 +236,7 @@ CREATE INDEX IF NOT EXISTS idx_working_hours_salon_weekday
   ON working_hours(salon_id, weekday, active);
 
 CREATE TABLE IF NOT EXISTS schedule_blocks (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   professional_id UUID REFERENCES professionals(id) ON DELETE CASCADE,
   start_time TIMESTAMPTZ NOT NULL,

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import useSWR, { mutate } from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import {
   Music,
@@ -54,6 +54,7 @@ const tones = [
 ];
 
 export function MusicLabSection() {
+  const { mutate } = useSWRConfig();
   const [companyName, setCompanyName] = useState("");
   const [niche, setNiche] = useState("");
   const [style, setStyle] = useState("Pop");
@@ -95,10 +96,10 @@ export function MusicLabSection() {
         return;
       }
 
-  // Revalidate list + credits
-  mutate("/api/music");
-  mutate("/api/dashboard");
-  mutate("/api/billing/credits");
+      // Revalidate list + credits
+      mutate("/api/music");
+      mutate("/api/dashboard");
+      mutate("/api/billing/credits");
 
       // Clear form
       setCompanyName("");
@@ -276,9 +277,7 @@ export function MusicLabSection() {
               >
                 {/* Header */}
                 <button
-                  onClick={() =>
-                    setExpandedId(isExpanded ? null : project.id)
-                  }
+                  onClick={() => setExpandedId(isExpanded ? null : project.id)}
                   className="w-full p-5 flex items-center justify-between text-left hover:bg-secondary/20 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -407,7 +406,7 @@ function MusicBlock({
           "text-sm leading-relaxed whitespace-pre-wrap p-3 rounded-lg border font-sans",
           accent
             ? "bg-primary/5 border-primary/10 text-primary font-semibold text-base"
-            : "bg-secondary/30 border-border text-foreground"
+            : "bg-secondary/30 border-border text-foreground",
         )}
       >
         {text}

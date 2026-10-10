@@ -2,14 +2,25 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import useSWR, { mutate } from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import {
-  UserCircle, Mail, Building2, Target, DollarSign, Percent,
-  Save, Loader2, CheckCircle2, MapPin, Sparkles, Camera,
+  UserCircle,
+  Mail,
+  Building2,
+  Target,
+  DollarSign,
+  Percent,
+  Save,
+  Loader2,
+  CheckCircle2,
+  MapPin,
+  Sparkles,
+  Camera,
 } from "lucide-react";
 
 export function ProfileSection() {
+  const { mutate } = useSWRConfig();
   const { data: profile, isLoading } = useSWR("/api/profile", fetcher);
   const [name, setName] = useState("");
   const [agencyName, setAgencyName] = useState("");
@@ -27,7 +38,9 @@ export function ProfileSection() {
       setAgencyName(profile.agencies?.name || "");
       setMonthlyGoal(String(profile.agencies?.monthly_goal || 10000));
       setAvgTicket(String(profile.agencies?.avg_ticket || 1500));
-      setConversionRate(String(Number(profile.agencies?.conversion_rate || 0.3) * 100));
+      setConversionRate(
+        String(Number(profile.agencies?.conversion_rate || 0.3) * 100),
+      );
       setMainNiche(profile.agencies?.main_niche || "");
       setMainCity(profile.agencies?.main_city || "");
     }
@@ -65,7 +78,11 @@ export function ProfileSection() {
   }
 
   const initials = name
-    ? name.split(" ").map((n) => n.charAt(0).toUpperCase()).slice(0, 2).join("")
+    ? name
+        .split(" ")
+        .map((n) => n.charAt(0).toUpperCase())
+        .slice(0, 2)
+        .join("")
     : "U";
 
   return (
@@ -81,14 +98,18 @@ export function ProfileSection() {
         <div className="flex flex-col sm:flex-row items-center gap-5">
           <div className="relative group">
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/80 to-chart-2 flex items-center justify-center ring-4 ring-primary/10">
-              <span className="text-2xl font-bold text-primary-foreground">{initials}</span>
+              <span className="text-2xl font-bold text-primary-foreground">
+                {initials}
+              </span>
             </div>
             <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
               <Camera className="w-3.5 h-3.5" />
             </button>
           </div>
           <div className="text-center sm:text-left flex-1">
-            <h3 className="text-lg font-semibold text-foreground">{name || "Usuário"}</h3>
+            <h3 className="text-lg font-semibold text-foreground">
+              {name || "Usuário"}
+            </h3>
             <p className="text-sm text-muted-foreground">{profile?.email}</p>
             <div className="flex items-center gap-2 mt-2 justify-center sm:justify-start flex-wrap">
               <span className="inline-flex items-center gap-1 text-xs text-primary bg-primary/10 px-2.5 py-1 rounded-full font-medium">
@@ -111,12 +132,16 @@ export function ProfileSection() {
           </div>
           <div className="flex gap-4 sm:gap-6 text-center">
             <div>
-              <p className="text-xl font-bold text-foreground">R$ {Number(monthlyGoal).toLocaleString("pt-BR")}</p>
+              <p className="text-xl font-bold text-foreground">
+                R$ {Number(monthlyGoal).toLocaleString("pt-BR")}
+              </p>
               <p className="text-[10px] text-muted-foreground">Meta Mensal</p>
             </div>
             <div className="w-px bg-border" />
             <div>
-              <p className="text-xl font-bold text-foreground capitalize">{profile?.subscription?.plan || "free"}</p>
+              <p className="text-xl font-bold text-foreground capitalize">
+                {profile?.subscription?.plan || "free"}
+              </p>
               <p className="text-[10px] text-muted-foreground">Plano</p>
             </div>
           </div>
@@ -130,39 +155,76 @@ export function ProfileSection() {
         </h3>
         <div className="flex flex-col gap-4">
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nome completo</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+              Nome completo
+            </label>
             <div className="relative">
               <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all" />
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+              />
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">E-mail</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+              E-mail
+            </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input type="email" value={profile?.email || ""} disabled className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-muted-foreground cursor-not-allowed transition-all" />
+              <input
+                type="email"
+                value={profile?.email || ""}
+                disabled
+                className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-muted-foreground cursor-not-allowed transition-all"
+              />
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nome da agência</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+              Nome da agência
+            </label>
             <div className="relative">
               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all" />
+              <input
+                type="text"
+                value={agencyName}
+                onChange={(e) => setAgencyName(e.target.value)}
+                className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nicho principal</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                Nicho principal
+              </label>
               <div className="relative">
                 <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type="text" value={mainNiche} onChange={(e) => setMainNiche(e.target.value)} placeholder="Ex: Restaurantes" className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all" />
+                <input
+                  type="text"
+                  value={mainNiche}
+                  onChange={(e) => setMainNiche(e.target.value)}
+                  placeholder="Ex: Restaurantes"
+                  className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+                />
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Cidade principal</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                Cidade principal
+              </label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type="text" value={mainCity} onChange={(e) => setMainCity(e.target.value)} placeholder="Ex: São Paulo" className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all" />
+                <input
+                  type="text"
+                  value={mainCity}
+                  onChange={(e) => setMainCity(e.target.value)}
+                  placeholder="Ex: São Paulo"
+                  className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+                />
               </div>
             </div>
           </div>
@@ -177,24 +239,45 @@ export function ProfileSection() {
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Meta mensal (R$)</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                Meta mensal (R$)
+              </label>
               <div className="relative">
                 <Target className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type="number" value={monthlyGoal} onChange={(e) => setMonthlyGoal(e.target.value)} className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all" />
+                <input
+                  type="number"
+                  value={monthlyGoal}
+                  onChange={(e) => setMonthlyGoal(e.target.value)}
+                  className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+                />
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Ticket médio (R$)</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                Ticket médio (R$)
+              </label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type="number" value={avgTicket} onChange={(e) => setAvgTicket(e.target.value)} className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all" />
+                <input
+                  type="number"
+                  value={avgTicket}
+                  onChange={(e) => setAvgTicket(e.target.value)}
+                  className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+                />
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Taxa conversão (%)</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                Taxa conversão (%)
+              </label>
               <div className="relative">
                 <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type="number" value={conversionRate} onChange={(e) => setConversionRate(e.target.value)} className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all" />
+                <input
+                  type="number"
+                  value={conversionRate}
+                  onChange={(e) => setConversionRate(e.target.value)}
+                  className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+                />
               </div>
             </div>
           </div>
